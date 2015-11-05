@@ -1,0 +1,5 @@
+title : volume based terrain rendering engine
+width : 800
+height : 600
+fullscreen : false
+borderless : false
