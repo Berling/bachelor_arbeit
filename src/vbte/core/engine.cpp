@@ -4,6 +4,7 @@
 #include <vbte/asset/asset_loader.hpp>
 #include <vbte/core/engine.hpp>
 #include <vbte/graphics/graphics_system.hpp>
+#include <vbte/rendering/rendering_system.hpp>
 #include <vbte/utils/config.hpp>
 #include <vbte/utils/logger.hpp>
 
@@ -23,6 +24,7 @@ namespace vbte {
 			}
 
 			graphics_system_ = std::make_unique<graphics::graphics_system>(*this);
+			rendering_system_ = std::make_unique<rendering::rendering_system>(*this);
 		}
 
 		engine::~engine() noexcept {
@@ -31,9 +33,8 @@ namespace vbte {
 
 		void engine::update(float delta_time) {
 			graphics_system_->begin();
+			rendering_system_->update(delta_time);
 			graphics_system_->end(delta_time);
-
-
 		}
 
 		void engine::run() {

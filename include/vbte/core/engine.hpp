@@ -10,6 +10,10 @@ namespace vbte {
 		class graphics_system;
 	}
 
+	namespace rendering {
+		class rendering_system;
+	}
+
 	namespace utils {
 		class config;
 	}
@@ -24,6 +28,7 @@ namespace vbte {
 			utils::config_manager config_manager_;
 			std::shared_ptr<utils::config> config_;
 			std::unique_ptr<graphics::graphics_system> graphics_system_;
+			std::unique_ptr<rendering::rendering_system> rendering_system_;
 
 		public:
 			engine();
