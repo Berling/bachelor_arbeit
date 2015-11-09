@@ -49,6 +49,10 @@ namespace vbte {
 			void end(float delta_time) noexcept;
 			void clear_color(const glm::vec4& color);
 
+			auto& clear_color() const noexcept {
+				return clear_color_;
+			}
+
 			auto& window() noexcept {
 				return *window_;
 			}
