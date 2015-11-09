@@ -47,6 +47,23 @@ namespace vbte {
 				while (SDL_PollEvent(&event)) {
 					if (event.type == SDL_QUIT) {
 						quit_ = true;
+					} else if (event.type == SDL_KEYDOWN) {
+						switch (event.key.keysym.scancode) {
+							case SDL_SCANCODE_1:
+								rendering_system_->change_mode(rendering::rendering_mode::shaded);
+								break;
+							case SDL_SCANCODE_2:
+								rendering_system_->change_mode(rendering::rendering_mode::solid);
+								break;
+							case SDL_SCANCODE_3:
+								rendering_system_->change_mode(rendering::rendering_mode::wireframe_filled);
+								break;
+							case SDL_SCANCODE_4:
+								rendering_system_->change_mode(rendering::rendering_mode::wireframe);
+								break;
+							default:
+								break;
+						}
 					}
 				}
 				last_time = current_time;

@@ -11,7 +11,8 @@
 namespace vbte {
 	namespace rendering {
 		rendering_system::rendering_system(core::engine& engine)
-		: engine_{engine}, debug_face_color_{0.f, 0.59f, 0.93f}, debug_edge_color_{0.09f, 0.19f, 0.49f} {
+		: engine_{engine}, debug_face_color_{0.f, 0.59f, 0.93f}, debug_edge_color_{0.09f, 0.19f, 0.49f},
+		mode_{rendering_mode::shaded} {
 			basic_layout_.emplace_back("_position", 3, GL_FLOAT, false, sizeof(basic_vertex), offsetof(basic_vertex, position));
 			
 			auto& shader_manager = engine_.graphics_system().shader_manager();
@@ -39,29 +40,65 @@ namespace vbte {
 			
 			glEnable(GL_DEPTH_TEST);
 
-			debug_program_.use();
-			debug_program_.uniform("projection", false, glm::perspective(glm::radians(45.f), 4.f / 3.f, 0.1f, 1000.f));
-			debug_program_.uniform("view", false, glm::lookAt(glm::vec3{2.f, 3.f, 5.f}, glm::vec3{0.f}, glm::vec3{0.f, 1.f, 0.f}));
-			debug_program_.uniform("model", false, glm::mat4{1.f});
-			debug_program_.uniform("color", debug_edge_color_);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-			glPointSize(8.f);
-			c.draw();
+			if (mode_ == rendering_mode::wireframe) {
+				debug_program_.use();
+				debug_program_.uniform("projection", false, glm::perspective(glm::radians(45.f), 4.f / 3.f, 0.1f, 1000.f));
+				debug_program_.uniform("view", false, glm::lookAt(glm::vec3{2.f, 3.f, 5.f}, glm::vec3{0.f}, glm::vec3{0.f, 1.f, 0.f}));
+				debug_program_.uniform("model", false, glm::mat4{1.f});
+				debug_program_.uniform("color", debug_edge_color_);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+				glPointSize(8.f);
+				c.draw();
 
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glLineWidth(3.f);
-			c.draw();
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(3.f);
+				c.draw();
 
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			glEnable(GL_POLYGON_OFFSET_FILL);
-			glPolygonOffset(1.f, 1.f);
-			glCullFace(GL_FRONT);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				glEnable(GL_POLYGON_OFFSET_FILL);
+				glPolygonOffset(1.f, 1.f);
+				glCullFace(GL_FRONT);
 
-			auto clear_color = engine_.graphics_system().clear_color();
-			debug_program_.uniform("color", debug_face_color_);//glm::vec3{clear_color});
-			c.draw();
+				auto clear_color = engine_.graphics_system().clear_color();
+				debug_program_.uniform("color", glm::vec3{clear_color});
+				c.draw();
 
-			glDisable(GL_POLYGON_OFFSET_FILL);
+				glDisable(GL_POLYGON_OFFSET_FILL);
+			} else if (mode_ == rendering_mode::wireframe_filled) {
+				debug_program_.use();
+				debug_program_.uniform("projection", false, glm::perspective(glm::radians(45.f), 4.f / 3.f, 0.1f, 1000.f));
+				debug_program_.uniform("view", false, glm::lookAt(glm::vec3{2.f, 3.f, 5.f}, glm::vec3{0.f}, glm::vec3{0.f, 1.f, 0.f}));
+				debug_program_.uniform("model", false, glm::mat4{1.f});
+				debug_program_.uniform("color", debug_edge_color_);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+				glPointSize(8.f);
+				c.draw();
+
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				glLineWidth(3.f);
+				c.draw();
+
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				glEnable(GL_POLYGON_OFFSET_FILL);
+				glPolygonOffset(1.f, 1.f);
+				glCullFace(GL_FRONT);
+
+				auto clear_color = engine_.graphics_system().clear_color();
+				debug_program_.uniform("color", debug_face_color_);
+				c.draw();
+
+				glDisable(GL_POLYGON_OFFSET_FILL);
+			} else if (mode_ == rendering_mode::solid) {
+				debug_program_.use();
+				debug_program_.uniform("projection", false, glm::perspective(glm::radians(45.f), 4.f / 3.f, 0.1f, 1000.f));
+				debug_program_.uniform("view", false, glm::lookAt(glm::vec3{2.f, 3.f, 5.f}, glm::vec3{0.f}, glm::vec3{0.f, 1.f, 0.f}));
+				debug_program_.uniform("model", false, glm::mat4{1.f});
+				debug_program_.uniform("color", debug_face_color_);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				c.draw();
+			} else if (mode_ == rendering_mode::shaded) {
+
+			}
 
 			glDisable(GL_DEPTH_TEST);
 		}

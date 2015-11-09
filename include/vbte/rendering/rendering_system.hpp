@@ -10,6 +10,15 @@ namespace vbte {
 	namespace core {
 		class engine;
 	}
+
+	namespace rendering {
+		enum class rendering_mode {
+			wireframe,
+			wireframe_filled,
+			solid,
+			shaded
+		};
+	}
 }
 
 namespace vbte {
@@ -21,6 +30,7 @@ namespace vbte {
 			graphics::program debug_program_;
 			glm::vec3 debug_face_color_;
 			glm::vec3 debug_edge_color_;
+			rendering_mode mode_;
 
 		public:
 			rendering_system(core::engine& engine);
@@ -36,6 +46,10 @@ namespace vbte {
 
 			auto& basic_layout() noexcept {
 				return basic_layout_;
+			}
+
+			void change_mode(rendering_mode mode) noexcept {
+				mode_ = mode;
 			}
 		};
 	}
