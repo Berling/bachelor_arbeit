@@ -31,6 +31,7 @@ namespace vbte {
 			glm::vec3 debug_face_color_;
 			glm::vec3 debug_edge_color_;
 			rendering_mode mode_;
+			graphics::program light_program_;
 
 		public:
 			rendering_system(core::engine& engine);

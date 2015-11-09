@@ -7,6 +7,7 @@ namespace vbte {
 	namespace rendering {
 		struct basic_vertex {
 			glm::vec3 position;
+			glm::vec3 normal;
 		};
 	}
 }

@@ -10,14 +10,35 @@ namespace vbte {
 		cube::cube(core::engine& engine, const glm::vec3& half_extend)
 		: drawable{engine}, vbo_{GL_STATIC_DRAW}, ibo_{GL_STATIC_DRAW} {
 			std::vector<basic_vertex> vertices = {
-				{{half_extend}},
-				{{half_extend * glm::vec3{-1.f, 1.f, 1.f}}},
-				{{half_extend * glm::vec3{-1.f, 1.f, -1.f}}},
-				{{half_extend * glm::vec3{1.f, 1.f, -1.f}}},
-				{{half_extend * glm::vec3{1.f, -1.f, 1.f}}},
-				{{half_extend * glm::vec3{-1.f, -1.f, 1.f}}},
-				{{half_extend * glm::vec3{-1.f}}},
-				{{half_extend * glm::vec3{1.f, -1.f, -1.f}}}
+				{{half_extend}, glm::vec3{0.f, 1.f, 0.f}},
+				{{half_extend * glm::vec3{-1.f, 1.f, 1.f}}, glm::vec3{0.f, 1.f, 0.f}},
+				{{half_extend * glm::vec3{-1.f, 1.f, -1.f}}, glm::vec3{0.f, 1.f, 0.f}},
+				{{half_extend * glm::vec3{1.f, 1.f, -1.f}}, glm::vec3{0.f, 1.f, 0.f}},
+
+				{{half_extend * glm::vec3{1.f, -1.f, 1.f}}, glm::vec3{0.f, -1.f, 0.f}},
+				{{half_extend * glm::vec3{-1.f, -1.f, 1.f}}, glm::vec3{0.f, -1.f, 0.f}},
+				{{half_extend * glm::vec3{-1.f}}, glm::vec3{0.f, -1.f, 0.f}},
+				{{half_extend * glm::vec3{1.f, -1.f, -1.f}}, glm::vec3{0.f, -1.f, 0.f}},
+
+				{{half_extend}, glm::vec3{0.f, 0.f, 1.f}},
+				{{half_extend * glm::vec3{-1.f, 1.f, 1.f}}, glm::vec3{0.f, 0.f, 1.f}},
+				{{half_extend * glm::vec3{1.f, -1.f, 1.f}}, glm::vec3{0.f, 0.f, 1.f}},
+				{{half_extend * glm::vec3{-1.f, -1.f, 1.f}}, glm::vec3{0.f, 0.f, 1.f}},
+
+				{{half_extend * glm::vec3{-1.f, 1.f, -1.f}}, glm::vec3{0.f, 0.f, -1.f}},
+				{{half_extend * glm::vec3{1.f, 1.f, -1.f}}, glm::vec3{0.f, 0.f, -1.f}},
+				{{half_extend * glm::vec3{-1.f}}, glm::vec3{0.f, 0.f, -1.f}},
+				{{half_extend * glm::vec3{1.f, -1.f, -1.f}}, glm::vec3{0.f, 0.f, -1.f}},
+
+				{{half_extend}, glm::vec3{1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec3{1.f, 1.f, -1.f}}, glm::vec3{1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec3{1.f, -1.f, 1.f}}, glm::vec3{1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec3{1.f, -1.f, -1.f}}, glm::vec3{1.f, 0.f, 0.f}},
+
+				{{half_extend * glm::vec3{-1.f, 1.f, 1.f}}, glm::vec3{-1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec3{-1.f, 1.f, -1.f}}, glm::vec3{-1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec3{-1.f, -1.f, 1.f}}, glm::vec3{-1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec3{-1.f}}, glm::vec3{-1.f, 0.f, 0.f}}
 			};
 			vbo_.data(sizeof(basic_vertex) * vertices.size(), vertices.data());
 
@@ -26,14 +47,14 @@ namespace vbte {
 				3, 2, 1,
 				4, 5, 6,
 				4, 6, 7,
-				0, 1, 5,
-				5, 4, 0,
-				2, 3, 7,
-				7, 6, 2,
-				1, 2, 6,
-				6, 5, 1,
-				3, 0, 4,
-				4, 7, 3
+				9, 10, 8,
+				9, 11, 10,
+				13, 14, 12,
+				15, 14, 13,
+				16, 18, 17,
+				17, 18, 19,
+				20, 22, 21,
+				22, 21, 20
 			};
 			ibo_.data(sizeof(unsigned int) * indices.size(), indices.data());
 
