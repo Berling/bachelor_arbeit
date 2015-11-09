@@ -62,6 +62,10 @@ namespace vbte {
 			graphics::graphics_system& graphics_system() noexcept {
 				return *graphics_system_;
 			}
+
+			auto& rendering_system() noexcept {
+				return *rendering_system_;
+			}
 		};
 	}
 }
