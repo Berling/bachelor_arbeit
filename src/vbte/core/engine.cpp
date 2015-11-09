@@ -7,6 +7,7 @@
 #include <vbte/core/engine.hpp>
 #include <vbte/core/window.hpp>
 #include <vbte/graphics/graphics_system.hpp>
+#include <vbte/rendering/cube.hpp>
 #include <vbte/rendering/rendering_system.hpp>
 #include <vbte/utils/config.hpp>
 #include <vbte/utils/logger.hpp>
@@ -43,6 +44,9 @@ namespace vbte {
 		}
 
 		void engine::update(float delta_time) {
+			static rendering::cube c{*this, glm::vec3{1.f}};
+			rendering_system_->draw(&c);
+
 			const Uint8* state = nullptr;
 			state = SDL_GetKeyboardState(nullptr);
 

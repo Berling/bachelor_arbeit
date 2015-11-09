@@ -12,6 +12,8 @@ namespace vbte {
 	}
 
 	namespace rendering {
+		class drawable;
+
 		enum class rendering_mode {
 			wireframe,
 			wireframe_filled,
@@ -32,6 +34,7 @@ namespace vbte {
 			glm::vec3 debug_edge_color_;
 			rendering_mode mode_;
 			graphics::program light_program_;
+			std::vector<drawable*> draw_queue_;
 
 		public:
 			rendering_system(core::engine& engine);
@@ -52,6 +55,8 @@ namespace vbte {
 			void change_mode(rendering_mode mode) noexcept {
 				mode_ = mode;
 			}
+
+			void draw(drawable* geometry);
 		};
 	}
 }

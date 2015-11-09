@@ -7,6 +7,7 @@
 #include <vbte/graphics/shader_manager.hpp>
 #include <vbte/rendering/basic_vertex.hpp>
 #include <vbte/rendering/cube.hpp>
+#include <vbte/rendering/drawable.hpp>
 #include <vbte/rendering/rendering_system.hpp>
 
 namespace vbte {
@@ -51,8 +52,6 @@ namespace vbte {
 		}
 
 		void rendering_system::update(float delta_time) {
-			static cube c{engine_, glm::vec3{1.f}};
-			
 			glEnable(GL_DEPTH_TEST);
 
 			auto& camera = engine_.camera();
@@ -61,50 +60,56 @@ namespace vbte {
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
 				debug_program_.uniform("view", false, camera.view());
-				debug_program_.uniform("model", false, glm::mat4{1.f});
 				debug_program_.uniform("color", debug_edge_color_);
-				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-				glPointSize(8.f);
-				c.draw();
+				
+				for (auto& geometry : draw_queue_) {
+					debug_program_.uniform("model", false, glm::mat4{1.f});
+					glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+					glPointSize(8.f);
+					geometry->draw();
 
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				glLineWidth(3.f);
-				c.draw();
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					glLineWidth(3.f);
+					geometry->draw();
 
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				glEnable(GL_POLYGON_OFFSET_FILL);
-				glPolygonOffset(1.f, 1.f);
-				glCullFace(GL_FRONT);
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					glEnable(GL_POLYGON_OFFSET_FILL);
+					glPolygonOffset(1.f, 1.f);
+					glCullFace(GL_FRONT);
 
-				auto clear_color = engine_.graphics_system().clear_color();
-				debug_program_.uniform("color", glm::vec3{clear_color});
-				c.draw();
+					auto clear_color = engine_.graphics_system().clear_color();
+					debug_program_.uniform("color", glm::vec3{clear_color});
+					geometry->draw();
 
-				glDisable(GL_POLYGON_OFFSET_FILL);
+					glDisable(GL_POLYGON_OFFSET_FILL);
+				}
 			} else if (mode_ == rendering_mode::wireframe_filled) {
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
 				debug_program_.uniform("view", false, camera.view());
-				debug_program_.uniform("model", false, glm::mat4{1.f});
 				debug_program_.uniform("color", debug_edge_color_);
-				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-				glPointSize(8.f);
-				c.draw();
+				
+				for (auto& geometry : draw_queue_) {
+					debug_program_.uniform("model", false, glm::mat4{1.f});
+					glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+					glPointSize(8.f);
+					geometry->draw();
 
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-				glLineWidth(3.f);
-				c.draw();
+					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+					glLineWidth(3.f);
+					geometry->draw();
 
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				glEnable(GL_POLYGON_OFFSET_FILL);
-				glPolygonOffset(1.f, 1.f);
-				glCullFace(GL_FRONT);
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					glEnable(GL_POLYGON_OFFSET_FILL);
+					glPolygonOffset(1.f, 1.f);
+					glCullFace(GL_FRONT);
 
-				auto clear_color = engine_.graphics_system().clear_color();
-				debug_program_.uniform("color", debug_face_color_);
-				c.draw();
+					auto clear_color = engine_.graphics_system().clear_color();
+					debug_program_.uniform("color", debug_face_color_);
+					geometry->draw();
 
-				glDisable(GL_POLYGON_OFFSET_FILL);
+					glDisable(GL_POLYGON_OFFSET_FILL);
+				}
 			} else if (mode_ == rendering_mode::solid) {
 				glEnable(GL_CULL_FACE);
 				glCullFace(GL_BACK);
@@ -112,10 +117,13 @@ namespace vbte {
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
 				debug_program_.uniform("view", false, camera.view());
-				debug_program_.uniform("model", false, glm::mat4{1.f});
 				debug_program_.uniform("color", debug_face_color_);
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				c.draw();
+				
+				for (auto& geometry : draw_queue_) {
+					debug_program_.uniform("model", false, glm::mat4{1.f});
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					geometry->draw();
+				}
 
 				glDisable(GL_CULL_FACE);
 			} else if (mode_ == rendering_mode::shaded) {
@@ -125,20 +133,29 @@ namespace vbte {
 				light_program_.use();
 				light_program_.uniform("projection", false, camera.projection());
 				light_program_.uniform("view", false, camera.view());
-				light_program_.uniform("model", false, glm::mat4{1.f});
 				light_program_.uniform("view_vector", glm::vec3{2.f, 3.f, 5.f});
 				light_program_.uniform("color", debug_face_color_);
 				light_program_.uniform("light_direction", glm::vec3{0.5f, 0.3f, 1.f});
 				light_program_.uniform("light_color", glm::vec3{1.f});
 				light_program_.uniform("light_energy", 1.0f);
 				light_program_.uniform("ambient_term", glm::vec3{0.2f});
-				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				c.draw();
+				
+				for (auto& geometry : draw_queue_) {
+					light_program_.uniform("model", false, glm::mat4{1.f});
+					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					geometry->draw();
+				}
 
 				glDisable(GL_CULL_FACE);
 			}
 
 			glDisable(GL_DEPTH_TEST);
+
+			draw_queue_.clear();
+		}
+
+		void rendering_system::draw(drawable* geometry) {
+			draw_queue_.emplace_back(geometry);
 		}
 	}
 }
