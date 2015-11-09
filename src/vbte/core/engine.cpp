@@ -1,8 +1,11 @@
 #include <SDL2/SDL.h>
+#include <iostream>
 
 #include <vbte/asset/asset.hpp>
 #include <vbte/asset/asset_loader.hpp>
+#include <vbte/core/camera.hpp>
 #include <vbte/core/engine.hpp>
+#include <vbte/core/window.hpp>
 #include <vbte/graphics/graphics_system.hpp>
 #include <vbte/rendering/rendering_system.hpp>
 #include <vbte/utils/config.hpp>
@@ -25,6 +28,14 @@ namespace vbte {
 
 			graphics_system_ = std::make_unique<graphics::graphics_system>(*this);
 			rendering_system_ = std::make_unique<rendering::rendering_system>(*this);
+			camera_ = std::make_unique<core::camera>(*this, glm::vec3{0.f, 0.f, 10.f}, glm::radians(45.f), 0.1f, 1000.f);
+		
+			SDL_ShowCursor(SDL_FALSE);
+
+			auto& window = graphics_system_->window();
+			auto width = static_cast<float>(window.width());
+			auto height = static_cast<float>(window.height());
+			SDL_WarpMouseInWindow(window.get(), width / 2.f, height / 2.f);
 		}
 
 		engine::~engine() noexcept {
@@ -32,6 +43,55 @@ namespace vbte {
 		}
 
 		void engine::update(float delta_time) {
+			const Uint8* state = nullptr;
+			state = SDL_GetKeyboardState(nullptr);
+
+			if (state[SDL_SCANCODE_W]) {
+				camera_->move_forward(true);
+			} else {
+				camera_->move_forward(false);
+			}
+
+			if (state[SDL_SCANCODE_S]) {
+				camera_->move_backward(true);
+			} else {
+				camera_->move_backward(false);
+			}
+
+			if (state[SDL_SCANCODE_A]) {
+				camera_->move_left(true);
+			} else {
+				camera_->move_left(false);
+			}
+
+			if (state[SDL_SCANCODE_D]) {
+				camera_->move_right(true);
+			} else {
+				camera_->move_right(false);
+			}
+
+			auto& window = graphics_system_->window();
+			auto width = static_cast<float>(window.width());
+			auto height = static_cast<float>(window.height());
+			auto x = 0;
+			auto y = 0;
+			SDL_GetMouseState(&x, &y);
+			auto xrel = 2.f * (x / width) - 1.f;
+			auto yrel = 2.f * (y / height) - 1.f;
+
+			auto local_rot_z = xrel * 40.f * delta_time;
+			auto azimuth = camera_->azimuth() + local_rot_z;
+			camera_->azimuth(azimuth);
+
+			auto elevation = camera_->elevation() - yrel * 30.f * delta_time;
+			if (glm::abs(elevation) <= glm::pi<float>() / 2.f) {
+				camera_->elevation(elevation);
+			}
+
+			SDL_WarpMouseInWindow(window.get(), width / 2.f, height / 2.f);
+
+			camera_->update(delta_time);
+
 			graphics_system_->begin();
 			rendering_system_->update(delta_time);
 			graphics_system_->end(delta_time);

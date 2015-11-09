@@ -6,6 +6,10 @@
 #include <vbte/utils/config.hpp>
 
 namespace vbte {
+	namespace core {
+		class camera;
+	}
+
 	namespace graphics {
 		class graphics_system;
 	}
@@ -29,6 +33,7 @@ namespace vbte {
 			std::shared_ptr<utils::config> config_;
 			std::unique_ptr<graphics::graphics_system> graphics_system_;
 			std::unique_ptr<rendering::rendering_system> rendering_system_;
+			std::unique_ptr<core::camera> camera_;
 
 		public:
 			engine();
@@ -65,6 +70,10 @@ namespace vbte {
 
 			auto& rendering_system() noexcept {
 				return *rendering_system_;
+			}
+
+			auto& camera() noexcept {
+				return *camera_;
 			}
 		};
 	}

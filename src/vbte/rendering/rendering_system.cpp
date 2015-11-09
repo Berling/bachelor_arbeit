@@ -1,5 +1,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <vbte/core/camera.hpp>
 #include <vbte/core/engine.hpp>
 #include <vbte/graphics/graphics_system.hpp>
 #include <vbte/graphics/shader.hpp>
@@ -54,10 +55,12 @@ namespace vbte {
 			
 			glEnable(GL_DEPTH_TEST);
 
+			auto& camera = engine_.camera();
+
 			if (mode_ == rendering_mode::wireframe) {
 				debug_program_.use();
-				debug_program_.uniform("projection", false, glm::perspective(glm::radians(45.f), 4.f / 3.f, 0.1f, 1000.f));
-				debug_program_.uniform("view", false, glm::lookAt(glm::vec3{2.f, 3.f, 5.f}, glm::vec3{0.f}, glm::vec3{0.f, 1.f, 0.f}));
+				debug_program_.uniform("projection", false, camera.projection());
+				debug_program_.uniform("view", false, camera.view());
 				debug_program_.uniform("model", false, glm::mat4{1.f});
 				debug_program_.uniform("color", debug_edge_color_);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
@@ -80,8 +83,8 @@ namespace vbte {
 				glDisable(GL_POLYGON_OFFSET_FILL);
 			} else if (mode_ == rendering_mode::wireframe_filled) {
 				debug_program_.use();
-				debug_program_.uniform("projection", false, glm::perspective(glm::radians(45.f), 4.f / 3.f, 0.1f, 1000.f));
-				debug_program_.uniform("view", false, glm::lookAt(glm::vec3{2.f, 3.f, 5.f}, glm::vec3{0.f}, glm::vec3{0.f, 1.f, 0.f}));
+				debug_program_.uniform("projection", false, camera.projection());
+				debug_program_.uniform("view", false, camera.view());
 				debug_program_.uniform("model", false, glm::mat4{1.f});
 				debug_program_.uniform("color", debug_edge_color_);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
@@ -107,8 +110,8 @@ namespace vbte {
 				glCullFace(GL_BACK);
 
 				debug_program_.use();
-				debug_program_.uniform("projection", false, glm::perspective(glm::radians(45.f), 4.f / 3.f, 0.1f, 1000.f));
-				debug_program_.uniform("view", false, glm::lookAt(glm::vec3{2.f, 3.f, 5.f}, glm::vec3{0.f}, glm::vec3{0.f, 1.f, 0.f}));
+				debug_program_.uniform("projection", false, camera.projection());
+				debug_program_.uniform("view", false, camera.view());
 				debug_program_.uniform("model", false, glm::mat4{1.f});
 				debug_program_.uniform("color", debug_face_color_);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -120,14 +123,15 @@ namespace vbte {
 				glCullFace(GL_BACK);
 
 				light_program_.use();
-				light_program_.uniform("projection", false, glm::perspective(glm::radians(45.f), 4.f / 3.f, 0.1f, 1000.f));
-				light_program_.uniform("view", false, glm::lookAt(glm::vec3{2.f, 3.f, 5.f}, glm::vec3{0.f}, glm::vec3{0.f, 1.f, 0.f}));
+				light_program_.uniform("projection", false, camera.projection());
+				light_program_.uniform("view", false, camera.view());
 				light_program_.uniform("model", false, glm::mat4{1.f});
 				light_program_.uniform("view_vector", glm::vec3{2.f, 3.f, 5.f});
 				light_program_.uniform("color", debug_face_color_);
 				light_program_.uniform("light_direction", glm::vec3{0.5f, 0.3f, 1.f});
 				light_program_.uniform("light_color", glm::vec3{1.f});
 				light_program_.uniform("light_energy", 1.0f);
+				light_program_.uniform("ambient_term", glm::vec3{0.2f});
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 				c.draw();
 
