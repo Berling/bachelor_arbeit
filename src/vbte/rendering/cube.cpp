@@ -53,8 +53,8 @@ namespace vbte {
 				15, 14, 13,
 				16, 18, 17,
 				17, 18, 19,
-				20, 22, 21,
-				22, 21, 20
+				21, 22, 20,
+				21, 23, 22
 			};
 			ibo_.data(sizeof(unsigned int) * indices.size(), indices.data());
 
