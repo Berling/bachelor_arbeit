@@ -33,6 +33,10 @@ namespace vbte {
 			rendering_system& operator=(rendering_system&&) = default;
 
 			void update(float delta_time);
+
+			auto& basic_layout() noexcept {
+				return basic_layout_;
+			}
 		};
 	}
 }
