@@ -1,3 +1,4 @@
+#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <vbte/core/camera.hpp>
@@ -60,10 +61,10 @@ namespace vbte {
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
 				debug_program_.uniform("view", false, camera.view());
-				debug_program_.uniform("color", debug_edge_color_);
 				
 				for (auto& geometry : draw_queue_) {
-					debug_program_.uniform("model", false, glm::mat4{1.f});
+					debug_program_.uniform("color", debug_edge_color_);
+					debug_program_.uniform("model", false, geometry->transform());
 					glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
 					glPointSize(8.f);
 					geometry->draw();
@@ -87,10 +88,10 @@ namespace vbte {
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
 				debug_program_.uniform("view", false, camera.view());
-				debug_program_.uniform("color", debug_edge_color_);
 				
 				for (auto& geometry : draw_queue_) {
-					debug_program_.uniform("model", false, glm::mat4{1.f});
+					debug_program_.uniform("color", debug_edge_color_);
+					debug_program_.uniform("model", false, geometry->transform());
 					glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
 					glPointSize(8.f);
 					geometry->draw();
@@ -120,7 +121,7 @@ namespace vbte {
 				debug_program_.uniform("color", debug_face_color_);
 				
 				for (auto& geometry : draw_queue_) {
-					debug_program_.uniform("model", false, glm::mat4{1.f});
+					debug_program_.uniform("model", false, geometry->transform());
 					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					geometry->draw();
 				}
@@ -135,13 +136,14 @@ namespace vbte {
 				light_program_.uniform("view", false, camera.view());
 				light_program_.uniform("view_vector", glm::vec3{2.f, 3.f, 5.f});
 				light_program_.uniform("color", debug_face_color_);
-				light_program_.uniform("light_direction", glm::vec3{0.5f, 0.3f, 1.f});
+				light_program_.uniform("light_direction", glm::vec3{0.2f, 0.3f, 1.f});
 				light_program_.uniform("light_color", glm::vec3{1.f});
 				light_program_.uniform("light_energy", 1.0f);
-				light_program_.uniform("ambient_term", glm::vec3{0.2f});
+				light_program_.uniform("ambient_term", glm::vec3{0.1f});
 				
 				for (auto& geometry : draw_queue_) {
-					light_program_.uniform("model", false, glm::mat4{1.f});
+					light_program_.uniform("model", false, geometry->transform());
+					light_program_.uniform("mit", false, glm::inverseTranspose(geometry->transform()));
 					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					geometry->draw();
 				}

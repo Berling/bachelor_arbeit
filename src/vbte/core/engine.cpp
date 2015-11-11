@@ -44,8 +44,10 @@ namespace vbte {
 		}
 
 		void engine::update(float delta_time) {
-			static rendering::cube c{*this, glm::vec3{1.f}};
+			static rendering::cube c{*this, glm::vec3{-2.f, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), glm::vec3{1.f}};
+			static rendering::cube c1{*this, glm::vec3{2.f, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), glm::vec3{1.f}};
 			rendering_system_->draw(&c);
+			rendering_system_->draw(&c1);
 
 			const Uint8* state = nullptr;
 			state = SDL_GetKeyboardState(nullptr);

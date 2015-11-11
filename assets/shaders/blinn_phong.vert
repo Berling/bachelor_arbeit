@@ -9,9 +9,10 @@ out vec3 normal_;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+uniform mat4 mit;
 
 void main() {
 	gl_Position = projection * view * model * vec4(_position, 1.f);
 	position_ = (model * vec4(_position, 1.f)).xyz;
-	normal_ = (model * vec4(_normal, 1.f)).xyz;
+	normal_ = (mit * vec4(_normal, 1.f)).xyz;
 }

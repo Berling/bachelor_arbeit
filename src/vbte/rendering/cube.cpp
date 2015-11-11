@@ -7,8 +7,8 @@
 
 namespace vbte {
 	namespace rendering {
-		cube::cube(core::engine& engine, const glm::vec3& half_extend)
-		: drawable{engine}, vbo_{GL_STATIC_DRAW}, ibo_{GL_STATIC_DRAW} {
+		cube::cube(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& half_extend)
+		: drawable{engine, position, rotation}, vbo_{GL_STATIC_DRAW}, ibo_{GL_STATIC_DRAW} {
 			std::vector<basic_vertex> vertices = {
 				{{half_extend}, glm::vec3{0.f, 1.f, 0.f}},
 				{{half_extend * glm::vec3{-1.f, 1.f, 1.f}}, glm::vec3{0.f, 1.f, 0.f}},

@@ -26,5 +26,5 @@ void main() {
 	vec3 V = normalize(view_vector - position_);
 	vec3 L = normalize(light_direction);
 
-	frag_color = vec4(ambient_term, 1.f) + vec4(blinn_phong(N, L, V, light_color, color, 50.f), 1.f);
+	frag_color = vec4(ambient_term * color, 1.f) + vec4(blinn_phong(N, L, V, light_color, color, 50.f), 1.f) * light_energy;
 }
