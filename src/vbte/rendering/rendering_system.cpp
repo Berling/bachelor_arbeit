@@ -14,7 +14,7 @@
 namespace vbte {
 	namespace rendering {
 		rendering_system::rendering_system(core::engine& engine)
-		: engine_{engine}, debug_face_color_{0.f, 0.59f, 0.93f}, debug_edge_color_{1.f},
+		: engine_{engine}, debug_face_color_{0.98f, 0.49f, 0.08f}, debug_edge_color_{1.f},
 		mode_{rendering_mode::shaded} {
 			basic_layout_.emplace_back("_position", 3, GL_FLOAT, false, sizeof(basic_vertex), offsetof(basic_vertex, position));
 			basic_layout_.emplace_back("_normal", 3, GL_FLOAT, false, sizeof(basic_vertex), offsetof(basic_vertex, normal));
