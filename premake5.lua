@@ -54,7 +54,36 @@ workspace "bachelor_arbeit"
 			}
 		end
 
-		files "src/**.cpp"
+		files "src/vbte/**.cpp"
 
 		configuration {"gmake", "linux" }
 			links {"GL", "GLEW", "SDL2"}
+
+		project "vtdg"
+			kind "ConsoleApp"
+			targetdir "build"
+			objdir "build/obj"
+
+			includedirs {
+				"include",
+				"lib/gli/include",
+				"lib/glm/include"
+			}
+
+			defines {
+				"GLM_SWIZZLE",
+				"GLEW_STATIC"
+			}
+
+			if _OPTIONS["cc"] == "clang" then
+				toolset "clang"
+				buildoptions "-stdlib=libc++"
+				links {
+					"c++",
+					"c++abi"
+				}
+			end
+
+			files "src/vtdg/**.cpp"
+
+			configuration {"gmake", "linux" }
