@@ -18,6 +18,10 @@ namespace vbte {
 		class rendering_system;
 	}
 
+	namespace terrain {
+		class terrain_system;
+	}
+
 	namespace utils {
 		class config;
 	}
@@ -33,6 +37,7 @@ namespace vbte {
 			std::shared_ptr<utils::config> config_;
 			std::unique_ptr<graphics::graphics_system> graphics_system_;
 			std::unique_ptr<rendering::rendering_system> rendering_system_;
+			std::unique_ptr<terrain::terrain_system> terrain_system_;
 			std::unique_ptr<core::camera> camera_;
 
 		public:
@@ -70,6 +75,10 @@ namespace vbte {
 
 			auto& rendering_system() noexcept {
 				return *rendering_system_;
+			}
+
+			auto& terrain_system() noexcept {
+				return *terrain_system_;
 			}
 
 			auto& camera() noexcept {
