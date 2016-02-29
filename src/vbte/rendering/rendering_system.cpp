@@ -18,7 +18,7 @@ namespace vbte {
 		mode_{rendering_mode::shaded} {
 			basic_layout_.emplace_back("_position", 3, GL_FLOAT, false, sizeof(basic_vertex), offsetof(basic_vertex, position));
 			basic_layout_.emplace_back("_normal", 3, GL_FLOAT, false, sizeof(basic_vertex), offsetof(basic_vertex, normal));
-			
+
 			auto& shader_manager = engine_.graphics_system().shader_manager();
 
 			auto vertex_shader = shader_manager.load("shaders/debug.vert", GL_VERTEX_SHADER);
@@ -61,7 +61,7 @@ namespace vbte {
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
 				debug_program_.uniform("view", false, camera.view());
-				
+
 				for (auto& geometry : draw_queue_) {
 					debug_program_.uniform("color", debug_edge_color_);
 					debug_program_.uniform("model", false, geometry->transform());
@@ -123,7 +123,7 @@ namespace vbte {
 				debug_program_.uniform("projection", false, camera.projection());
 				debug_program_.uniform("view", false, camera.view());
 				debug_program_.uniform("color", debug_face_color_);
-				
+
 				for (auto& geometry : draw_queue_) {
 					debug_program_.uniform("model", false, geometry->transform());
 					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -144,7 +144,7 @@ namespace vbte {
 				light_program_.uniform("light_color", glm::vec3{1.f});
 				light_program_.uniform("light_energy", 1.0f);
 				light_program_.uniform("ambient_term", glm::vec3{0.1f});
-				
+
 				for (auto& geometry : draw_queue_) {
 					light_program_.uniform("model", false, geometry->transform());
 					light_program_.uniform("mit", false, glm::inverseTranspose(geometry->transform()));

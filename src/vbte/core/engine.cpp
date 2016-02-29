@@ -9,6 +9,7 @@
 #include <vbte/graphics/graphics_system.hpp>
 #include <vbte/rendering/cube.hpp>
 #include <vbte/rendering/rendering_system.hpp>
+#include <vbte/terrain/terrain_cell.hpp>
 #include <vbte/terrain/terrain_system.hpp>
 #include <vbte/terrain/volume_data.hpp>
 #include <vbte/utils/config.hpp>
@@ -34,12 +35,12 @@ namespace vbte {
 			terrain_system_ = std::make_unique<terrain::terrain_system>(*this);
 			camera_ = std::make_unique<core::camera>(*this, glm::vec3{0.f, 0.f, 10.f}, glm::radians(45.f), 0.1f, 1000.f);
 
-			auto& volume_data_manager = terrain_system_->volume_data_manager();
+			/*auto& volume_data_manager = terrain_system_->volume_data_manager();
 			auto sphere = volume_data_manager.load("terrain/test.vol");
 			if (!sphere) {
 				throw std::runtime_error{"could not load terrain/test.vol"};
 			}
-			utils::log(utils::log_level::debug) << sphere->value(64, 26, 64) << std::endl;
+			utils::log(utils::log_level::debug) << sphere->value(64, 26, 64) << std::endl;*/
 
 			SDL_ShowCursor(SDL_FALSE);
 
@@ -56,8 +57,10 @@ namespace vbte {
 		void engine::update(float delta_time) {
 			static rendering::cube c{*this, glm::vec3{-2.f, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), glm::vec3{1.f}};
 			static rendering::cube c1{*this, glm::vec3{2.f, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), glm::vec3{1.f}};
+			static terrain::terrain_cell t{*this, glm::vec3{0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), "terrain/test.vol"};
 			rendering_system_->draw(&c);
 			rendering_system_->draw(&c1);
+			rendering_system_->draw(&t);
 
 			const Uint8* state = nullptr;
 			state = SDL_GetKeyboardState(nullptr);
