@@ -55,14 +55,16 @@ namespace vbte {
 		}
 
 		void engine::update(float delta_time) {
-			static rendering::cube c{*this, glm::vec3{-2.f, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), glm::vec3{1.f}};
-			static rendering::cube c1{*this, glm::vec3{2.f, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), glm::vec3{1.f}};
+			//static rendering::cube c{*this, glm::vec3{-2.f, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), glm::vec3{1.f}};
+			//static rendering::cube c1{*this, glm::vec3{2.f, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), glm::vec3{1.f}};
 			static terrain::terrain_cell t{*this, glm::vec3{0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), "terrain/test.vol"};
-			static terrain::terrain_cell t2{*this, glm::vec3{5.f - 5.f / 64, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), "terrain/test2.vol"};
-			rendering_system_->draw(&c);
-			rendering_system_->draw(&c1);
+			//static terrain::terrain_cell t2{*this, glm::vec3{5.f - 5.f / 64, 0.f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), "terrain/test2.vol"};
+			//static terrain::terrain_cell sphere{*this, glm::vec3{0.f, -2.5f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), "terrain/sphere.vol"};
+			//rendering_system_->draw(&c);
+			//rendering_system_->draw(&c1);
 			rendering_system_->draw(&t);
-			rendering_system_->draw(&t2);
+			//rendering_system_->draw(&t2);
+			//rendering_system_->draw(&sphere);
 
 			const Uint8* state = nullptr;
 			state = SDL_GetKeyboardState(nullptr);

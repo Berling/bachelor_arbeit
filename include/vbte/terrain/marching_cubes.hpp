@@ -314,8 +314,9 @@ namespace vbte {
         std::array<float, 8> values;
       };
 
-      std::vector<rendering::basic_vertex> generate_triangles(const cell& grid_cell, float isovalue);
+      std::vector<rendering::basic_vertex> generate_triangles(const volume_data& grid, const cell& grid_cell, float isovalue);
       std::vector<rendering::basic_vertex> marching_cubes(const volume_data& grid);
       glm::vec3 interpolate_vertex(float isovalue, const glm::vec3& p0, const glm::vec3& p1, float s0, float s1);
+      glm::vec3 calculate_normal(const volume_data& grid, const glm::vec3& p, float step_size = 0.1f);
     }
 }
