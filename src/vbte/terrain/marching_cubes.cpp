@@ -215,9 +215,9 @@ namespace vbte {
       };
 
       auto gradient = glm::vec3{
-        (sample(grid, p + glm::vec3{step_size, 0.f, 0.f}) - sample(grid, p - glm::vec3{step_size, 0.f, 0.f})) / (2.f * step_size),
-        (sample(grid, p + glm::vec3{0.f, step_size, 0.f}) - sample(grid, p - glm::vec3{0.f, step_size, 0.f})) / (2.f * step_size),
-        (sample(grid, p + glm::vec3{0.f, 0.f, step_size}) - sample(grid, p - glm::vec3{0.f, 0.f, step_size})) / (2.f * step_size)
+        (sample(grid, p - glm::vec3{step_size, 0.f, 0.f}) - sample(grid, p + glm::vec3{step_size, 0.f, 0.f})) / (2.f * step_size),
+        (sample(grid, p - glm::vec3{0.f, step_size, 0.f}) - sample(grid, p + glm::vec3{0.f, step_size, 0.f})) / (2.f * step_size),
+        (sample(grid, p - glm::vec3{0.f, 0.f, step_size}) - sample(grid, p + glm::vec3{0.f, 0.f, step_size})) / (2.f * step_size)
       };
 
       return glm::normalize(gradient);
