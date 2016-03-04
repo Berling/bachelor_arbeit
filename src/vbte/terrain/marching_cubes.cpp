@@ -7,7 +7,7 @@
 
 namespace vbte {
   namespace terrain {
-    std::vector<rendering::basic_vertex> generate_triangles(const volume_data& grid, const cell& grid_cell, float isovalue) {
+    std::vector<rendering::basic_vertex> generate_triangles(const volume_data& grid, const cell& grid_cell, size_t resolution, float isovalue) {
       auto cube_index = 0;
       if (grid_cell.values[0] < isovalue) { cube_index |= 1; }
       if (grid_cell.values[1] < isovalue) { cube_index |= 2; }
@@ -22,91 +22,92 @@ namespace vbte {
         return std::vector<rendering::basic_vertex>{};
       }
 
-      auto half_sample_rate = grid.sample_rate() / 2.f;
+      auto sample_rate = grid.grid_length() / resolution;
+      auto half_sample_rate = sample_rate / 2.f;
 
       std::array<rendering::basic_vertex, 12> vertex_list;
       if (edge_table[cube_index] & 1) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[0], grid_cell.vertices[1], grid_cell.values[0], grid_cell.values[1]);
         vertex_list[0] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 2) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[1], grid_cell.vertices[2], grid_cell.values[1], grid_cell.values[2]);
         vertex_list[1] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 4) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[2], grid_cell.values[3], grid_cell.values[2]);
         vertex_list[2] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 8) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[0], grid_cell.values[3], grid_cell.values[0]);
         vertex_list[3] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 16) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[4], grid_cell.vertices[5], grid_cell.values[4], grid_cell.values[5]);
         vertex_list[4] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 32) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[5], grid_cell.vertices[6], grid_cell.values[5], grid_cell.values[6]);
         vertex_list[5] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 64) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[6], grid_cell.vertices[7], grid_cell.values[6], grid_cell.values[7]);
         vertex_list[6] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 128) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[7], grid_cell.vertices[4], grid_cell.values[7], grid_cell.values[4]);
         vertex_list[7] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 256) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[0], grid_cell.vertices[4], grid_cell.values[0], grid_cell.values[4]);
         vertex_list[8] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 512) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[1], grid_cell.vertices[5], grid_cell.values[1], grid_cell.values[5]);
         vertex_list[9] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 1024) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[2], grid_cell.vertices[6], grid_cell.values[2], grid_cell.values[6]);
         vertex_list[10] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
       if (edge_table[cube_index] & 2048) {
         auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[7], grid_cell.values[3], grid_cell.values[7]);
         vertex_list[11] = rendering::basic_vertex{
           vertex,
-          calculate_normal(grid, vertex, half_sample_rate)
+          calculate_normal(grid, vertex, resolution, half_sample_rate)
         };
       }
 
@@ -120,11 +121,10 @@ namespace vbte {
       return vertices;
     }
 
-    std::vector<rendering::basic_vertex> marching_cubes(const volume_data& grid) {
+    std::vector<rendering::basic_vertex> marching_cubes(const volume_data& grid, size_t resolution) {
       std::vector<rendering::basic_vertex> vertices;
 
-      auto resolution = grid.resolution();
-      auto sample_rate = grid.sample_rate();
+      auto sample_rate = grid.grid_length() / resolution;
       for (auto x = 0; x < resolution - 1; ++x) {
         for (auto y = 0; y < resolution - 1; ++y) {
           for (auto z = 0; z < resolution - 1; ++z) {
@@ -141,16 +141,16 @@ namespace vbte {
               p + glm::vec3{0.f, sample_rate, sample_rate}
             };
             c.values = std::array<float, 8>{
-              grid.sample(c.vertices[0]),
-              grid.sample(c.vertices[1]),
-              grid.sample(c.vertices[2]),
-              grid.sample(c.vertices[3]),
-              grid.sample(c.vertices[4]),
-              grid.sample(c.vertices[5]),
-              grid.sample(c.vertices[6]),
-              grid.sample(c.vertices[7])
+              grid.sample(c.vertices[0], resolution),
+              grid.sample(c.vertices[1], resolution),
+              grid.sample(c.vertices[2], resolution),
+              grid.sample(c.vertices[3], resolution),
+              grid.sample(c.vertices[4], resolution),
+              grid.sample(c.vertices[5], resolution),
+              grid.sample(c.vertices[6], resolution),
+              grid.sample(c.vertices[7], resolution)
             };
-            auto cell_triangles = generate_triangles(grid, c, 1.f);
+            auto cell_triangles = generate_triangles(grid, c, resolution, 1.f);
             vertices.insert(vertices.end(), cell_triangles.begin(), cell_triangles.end());
           }
         }
@@ -164,11 +164,11 @@ namespace vbte {
       return alpha * p0 + (1 - alpha) * p1;
     }
 
-    glm::vec3 calculate_normal(const volume_data& grid, const glm::vec3& p, float step_size) {
+    glm::vec3 calculate_normal(const volume_data& grid, const glm::vec3& p, size_t resolution, float step_size) {
       auto gradient = glm::vec3{
-        (grid.sample(p - glm::vec3{step_size, 0.f, 0.f}) - grid.sample(p + glm::vec3{step_size, 0.f, 0.f})) / (2.f * step_size),
-        (grid.sample(p - glm::vec3{0.f, step_size, 0.f}) - grid.sample(p + glm::vec3{0.f, step_size, 0.f})) / (2.f * step_size),
-        (grid.sample(p - glm::vec3{0.f, 0.f, step_size}) - grid.sample(p + glm::vec3{0.f, 0.f, step_size})) / (2.f * step_size)
+        (grid.sample(p - glm::vec3{step_size, 0.f, 0.f}, resolution) - grid.sample(p + glm::vec3{step_size, 0.f, 0.f}, resolution)) / (2.f * step_size),
+        (grid.sample(p - glm::vec3{0.f, step_size, 0.f}, resolution) - grid.sample(p + glm::vec3{0.f, step_size, 0.f}, resolution)) / (2.f * step_size),
+        (grid.sample(p - glm::vec3{0.f, 0.f, step_size}, resolution) - grid.sample(p + glm::vec3{0.f, 0.f, step_size}, resolution)) / (2.f * step_size)
       };
 
       return glm::normalize(gradient);

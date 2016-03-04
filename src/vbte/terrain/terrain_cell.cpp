@@ -6,6 +6,7 @@
 #include <vbte/terrain/marching_cubes.hpp>
 #include <vbte/terrain/terrain_cell.hpp>
 #include <vbte/terrain/terrain_system.hpp>
+#include <vbte/terrain/volume_data.hpp>
 #include <vbte/terrain/volume_data_manager.hpp>
 
 namespace vbte {
@@ -17,7 +18,7 @@ namespace vbte {
         throw std::runtime_error{"could not load file " + file_name};
       }
 
-      auto vertices = marching_cubes(*volume_data);
+      auto vertices = marching_cubes(*volume_data, volume_data->resolution());
       index_count = vertices.size();
       vbo_.data(sizeof(rendering::basic_vertex) * index_count, vertices.data());
 
