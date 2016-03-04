@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <glm/glm.hpp>
+
 namespace vbte {
 	namespace terrain {
 		struct volume_data_header {
@@ -45,6 +47,9 @@ namespace vbte {
 			auto& value(size_t x, size_t y, size_t z) const {
 				return grid_.at(x).at(y).at(z);
 			}
+
+			float sample(const glm::vec3& p) const;
+			float sample(const glm::vec3& p, size_t resolution) const;
 
 			auto grid_length() const noexcept {
 				return length_;

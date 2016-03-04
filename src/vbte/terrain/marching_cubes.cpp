@@ -129,27 +129,26 @@ namespace vbte {
         for (auto y = 0; y < resolution - 1; ++y) {
           for (auto z = 0; z < resolution - 1; ++z) {
             auto p = glm::vec3{x, y , z} * sample_rate;
-            cell c = {
-              std::array<glm::vec3, 8>{
-                p,
-                p + glm::vec3{sample_rate, 0.f, 0.f},
-                p + glm::vec3{sample_rate, 0.f, sample_rate},
-                p + glm::vec3{0.f, 0.f, sample_rate},
-                p + glm::vec3{0.f, sample_rate, 0.f},
-                p + glm::vec3{sample_rate, sample_rate, 0.f},
-                p + glm::vec3{sample_rate, sample_rate, sample_rate},
-                p + glm::vec3{0.f, sample_rate, sample_rate}
-              },
-              std::array<float, 8>{
-                grid.value(x, y, z),
-                grid.value(x + 1, y, z),
-                grid.value(x + 1, y, z + 1),
-                grid.value(x, y, z + 1),
-                grid.value(x, y + 1, z),
-                grid.value(x + 1, y + 1, z),
-                grid.value(x + 1, y + 1, z + 1),
-                grid.value(x, y + 1, z + 1)
-              }
+            cell c;
+            c.vertices = std::array<glm::vec3, 8>{
+              p,
+              p + glm::vec3{sample_rate, 0.f, 0.f},
+              p + glm::vec3{sample_rate, 0.f, sample_rate},
+              p + glm::vec3{0.f, 0.f, sample_rate},
+              p + glm::vec3{0.f, sample_rate, 0.f},
+              p + glm::vec3{sample_rate, sample_rate, 0.f},
+              p + glm::vec3{sample_rate, sample_rate, sample_rate},
+              p + glm::vec3{0.f, sample_rate, sample_rate}
+            };
+            c.values = std::array<float, 8>{
+              grid.sample(c.vertices[0]),
+              grid.sample(c.vertices[1]),
+              grid.sample(c.vertices[2]),
+              grid.sample(c.vertices[3]),
+              grid.sample(c.vertices[4]),
+              grid.sample(c.vertices[5]),
+              grid.sample(c.vertices[6]),
+              grid.sample(c.vertices[7])
             };
             auto cell_triangles = generate_triangles(grid, c, 1.f);
             vertices.insert(vertices.end(), cell_triangles.begin(), cell_triangles.end());
@@ -166,58 +165,10 @@ namespace vbte {
     }
 
     glm::vec3 calculate_normal(const volume_data& grid, const glm::vec3& p, float step_size) {
-      static auto sample = [](const volume_data& data, const glm::vec3& point) {
-        auto sample_rate = data.sample_rate();
-        auto index_x = static_cast<int>(point.x / sample_rate);
-        auto index_y = static_cast<int>(point.y / sample_rate);
-        auto index_z = static_cast<int>(point.z / sample_rate);
-
-        auto resolution = data.resolution();
-        auto x0 = index_x * sample_rate;
-        auto y0 = index_y * sample_rate;
-        auto z0 = index_z * sample_rate;
-        auto x1 = (index_x + 1) * sample_rate;
-        if (point.x >= (resolution - 1) * sample_rate) {
-          x1 = (index_x - 1) * sample_rate;
-        } else if (point.x <= 0.f) {
-          x1 = (index_x + 1) * sample_rate;
-        }
-        auto y1 = (index_y + 1) * sample_rate;
-        if (point.y >= (resolution - 1) * sample_rate) {
-          y1 = (index_y - 1) * sample_rate;
-        } else if (point.y <= 0.f) {
-          y1 = (index_y + 1) * sample_rate;
-        }
-        auto z1 = (index_z + 1) * sample_rate;
-        if (point.z >= (resolution - 1) * sample_rate) {
-          z1 = (index_z - 1) * sample_rate;
-        } else if (point.x <= 0.f) {
-          z1 = (index_z + 1) * sample_rate;
-        }
-
-        auto xd = (point.x - x0) / (x1 - x0);
-        auto yd = (point.y - y0) / (y1 - y0);
-        auto zd = (point.z - z0) / (z1 - z0);
-
-        auto c00 = data.value(int(x0 / sample_rate), int(y0 / sample_rate), int(z0 / sample_rate)) * (1.f - xd)
-          + data.value(int(x1 / sample_rate), int(y0 / sample_rate), int(z0 / sample_rate)) * xd;
-        auto c01 = data.value(int(x0 / sample_rate), int(y0 / sample_rate), int(z1 / sample_rate)) * (1.f - xd)
-          + data.value(int(x1 / sample_rate), int(y0 / sample_rate), int(z1 / sample_rate)) * xd;
-        auto c10 = data.value(int(x0 / sample_rate), int(y1 / sample_rate), int(z0 / sample_rate)) * (1.f - xd)
-          + data.value(int(x1 / sample_rate), int(y1 / sample_rate), int(z0 / sample_rate)) * xd;
-        auto c11 = data.value(int(x0 / sample_rate), int(y1 / sample_rate), int(z1 / sample_rate)) * (1.f - xd)
-          + data.value(int(x1 / sample_rate), int(y1 / sample_rate), int(z1 / sample_rate)) * xd;
-
-        auto c0 = c00 * (1.f - yd) + c10 * yd;
-        auto c1 = c01 * (1.f - yd) + c11 * yd;
-
-        return c0 * (1.f - zd) + c1 * zd;
-      };
-
       auto gradient = glm::vec3{
-        (sample(grid, p - glm::vec3{step_size, 0.f, 0.f}) - sample(grid, p + glm::vec3{step_size, 0.f, 0.f})) / (2.f * step_size),
-        (sample(grid, p - glm::vec3{0.f, step_size, 0.f}) - sample(grid, p + glm::vec3{0.f, step_size, 0.f})) / (2.f * step_size),
-        (sample(grid, p - glm::vec3{0.f, 0.f, step_size}) - sample(grid, p + glm::vec3{0.f, 0.f, step_size})) / (2.f * step_size)
+        (grid.sample(p - glm::vec3{step_size, 0.f, 0.f}) - grid.sample(p + glm::vec3{step_size, 0.f, 0.f})) / (2.f * step_size),
+        (grid.sample(p - glm::vec3{0.f, step_size, 0.f}) - grid.sample(p + glm::vec3{0.f, step_size, 0.f})) / (2.f * step_size),
+        (grid.sample(p - glm::vec3{0.f, 0.f, step_size}) - grid.sample(p + glm::vec3{0.f, 0.f, step_size})) / (2.f * step_size)
       };
 
       return glm::normalize(gradient);
