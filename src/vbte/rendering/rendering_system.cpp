@@ -117,7 +117,7 @@ namespace vbte {
 				}
 			} else if (mode_ == rendering_mode::solid) {
 				glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT);
+				glCullFace(GL_BACK);
 
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
@@ -133,7 +133,7 @@ namespace vbte {
 				glDisable(GL_CULL_FACE);
 			} else if (mode_ == rendering_mode::shaded) {
 				glEnable(GL_CULL_FACE);
-				glCullFace(GL_FRONT);
+				glCullFace(GL_BACK);
 
 				light_program_.use();
 				light_program_.uniform("projection", false, camera.projection());
