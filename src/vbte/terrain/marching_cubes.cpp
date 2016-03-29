@@ -125,9 +125,9 @@ namespace vbte {
 			std::vector<rendering::basic_vertex> vertices;
 
 			auto sample_rate = grid.grid_length() / resolution;
-			for (auto x = 0; x < resolution - 1; ++x) {
-				for (auto y = 0; y < resolution - 1; ++y) {
-					for (auto z = 0; z < resolution - 1; ++z) {
+			for (auto x = 0; x < resolution; ++x) {
+				for (auto y = 0; y < resolution; ++y) {
+					for (auto z = 0; z < resolution; ++z) {
 						auto p = glm::vec3{x, y , z} * sample_rate;
 						cell c;
 						c.vertices = std::array<glm::vec3, 8>{
