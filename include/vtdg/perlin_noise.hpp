@@ -7,16 +7,16 @@
 #include <array>
 
 namespace vtdg {
-  class perlin_noise {
-  private:
-    const static std::array<int, 512> p;
+	class perlin_noise {
+	private:
+		const static std::array<int, 512> p;
 
-  public:
-  	static float noise(float x, float y, float z);
+	public:
+		static float noise(float x, float y, float z);
 
-  private:
-  	static float fade(float t);
-  	static float lerp(float t, float a, float b);
-  	static float grad(int hash, float x, float y, float z);
-  };
+	private:
+		static float fade(float t);
+		static float lerp(float t, float a, float b);
+		static float grad(int hash, float x, float y, float z);
+	};
 }

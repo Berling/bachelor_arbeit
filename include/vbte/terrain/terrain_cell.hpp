@@ -9,24 +9,24 @@
 #include <vbte/rendering/drawable.hpp>
 
 namespace vbte {
-  namespace core {
-    class engine;
-  }
+	namespace core {
+		class engine;
+	}
 }
 
 namespace vbte {
-  namespace terrain {
-    class terrain_cell : public rendering::drawable {
-    private:
-      graphics::vertex_array vao_;
-      graphics::vertex_buffer vbo_;
-      size_t index_count;
+	namespace terrain {
+		class terrain_cell : public rendering::drawable {
+		private:
+			graphics::vertex_array vao_;
+			graphics::vertex_buffer vbo_;
+			size_t index_count;
 
-    public:
-      terrain_cell(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
-      ~terrain_cell() = default;
+		public:
+			terrain_cell(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
+			~terrain_cell() = default;
 
-      void draw() const override;
-    };
-  }
+			void draw() const override;
+		};
+	}
 }
