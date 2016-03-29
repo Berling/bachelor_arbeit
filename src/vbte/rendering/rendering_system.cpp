@@ -7,6 +7,7 @@
 #include <vbte/graphics/shader.hpp>
 #include <vbte/graphics/shader_manager.hpp>
 #include <vbte/rendering/basic_vertex.hpp>
+#include <vbte/rendering/bounding_box.hpp>
 #include <vbte/rendering/cube.hpp>
 #include <vbte/rendering/drawable.hpp>
 #include <vbte/rendering/rendering_system.hpp>
@@ -155,6 +156,22 @@ namespace vbte {
 				glDisable(GL_CULL_FACE);
 			}
 
+			static bounding_box bb{engine_};
+
+			debug_program_.use();
+			debug_program_.uniform("projection", false, camera.projection());
+			debug_program_.uniform("view", false, camera.view());
+			debug_program_.uniform("color", glm::vec3{1.f, 0.f, 0.f});
+
+			for (auto& bounding_box : bounding_box_draw_queue_) {
+				auto scale = glm::scale(glm::mat4{1.f}, 2.f * bounding_box.half_extend);
+				auto translation = glm::translate(glm::mat4{1.f}, bounding_box.position);
+				auto rotation = glm::mat4_cast(bounding_box.rotation);
+				auto model = translation * rotation * scale;
+				debug_program_.uniform("model", false, model);
+				bb.draw();
+			}
+
 			glDisable(GL_DEPTH_TEST);
 
 			draw_queue_.clear();
@@ -162,6 +179,10 @@ namespace vbte {
 
 		void rendering_system::draw(drawable* geometry) {
 			draw_queue_.emplace_back(geometry);
+		}
+
+		void rendering_system::draw_bounding_box(const glm::vec3& half_extend, const glm::vec3& position, const glm::quat& rotation) {
+			bounding_box_draw_queue_.emplace_back(bounding_box_uniforms{half_extend, position, rotation});
 		}
 	}
 }

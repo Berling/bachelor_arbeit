@@ -1,7 +1,10 @@
 #ifndef __VBTE_RENDERING_RENDERING_SYSTEM_HPP__
 #define __VBTE_RENDERING_RENDERING_SYSTEM_HPP__
 
+#include <memory>
+
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <vbte/graphics/program.hpp>
 #include <vbte/graphics/vertex_layout.hpp>
@@ -20,6 +23,12 @@ namespace vbte {
 			solid,
 			shaded
 		};
+
+		struct bounding_box_uniforms {
+			glm::vec3 half_extend;
+			glm::vec3 position;
+			glm::quat rotation;
+		};
 	}
 }
 
@@ -35,6 +44,7 @@ namespace vbte {
 			rendering_mode mode_;
 			graphics::program light_program_;
 			std::vector<drawable*> draw_queue_;
+			std::vector<bounding_box_uniforms> bounding_box_draw_queue_;
 
 		public:
 			rendering_system(core::engine& engine);
@@ -57,6 +67,7 @@ namespace vbte {
 			}
 
 			void draw(drawable* geometry);
+			void draw_bounding_box(const glm::vec3& half_extend, const glm::vec3& position, const glm::quat& rotation);
 		};
 	}
 }
