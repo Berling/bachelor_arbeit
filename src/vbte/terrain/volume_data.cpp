@@ -15,8 +15,9 @@ namespace vbte {
 				throw std::runtime_error{file_name + " contains no volume data"};
 			}
 
+			auto actual_resolution = file_header.resolution + 1;
 			auto calculated_size = sizeof(volume_data_header)
-				+ file_header.resolution * file_header.resolution * file_header.resolution * sizeof(float);
+				+ actual_resolution * actual_resolution * actual_resolution * sizeof(float);
 			if (calculated_size != data.size()) {
 				throw std::runtime_error{file_name + " actual size: " + std::to_string(data.size())
 					+ " calculated size: " + std::to_string(calculated_size)};
@@ -28,11 +29,11 @@ namespace vbte {
 
 			data_ptr += sizeof(volume_data_header);
 
-			for (auto x = 0; x < resolution_; ++x) {
+			for (auto x = 0; x <= resolution_; ++x) {
 				grid_.emplace_back(std::vector<std::vector<float>>{});
-				for (auto y = 0; y < resolution_; ++y) {
+				for (auto y = 0; y <= resolution_; ++y) {
 					grid_[x].emplace_back(std::vector<float>{});
-					for (auto z = 0; z < resolution_; ++z) {
+					for (auto z = 0; z <= resolution_; ++z) {
 						grid_[x][y].emplace_back(*reinterpret_cast<const float*>(data_ptr));
 						data_ptr += sizeof(float);
 					}
@@ -58,19 +59,19 @@ namespace vbte {
 			auto y0 = index_y * sample_rate;
 			auto z0 = index_z * sample_rate;
 			auto x1 = (index_x + 1) * sample_rate;
-			if (p.x >= (resolution - 1) * sample_rate) {
+			if (p.x >= resolution * sample_rate) {
 				x1 = (index_x - 1) * sample_rate;
 			} else if (p.x <= 0.f) {
 				x1 = (index_x + 1) * sample_rate;
 			}
 			auto y1 = (index_y + 1) * sample_rate;
-			if (p.y >= (resolution - 1) * sample_rate) {
+			if (p.y >= resolution * sample_rate) {
 				y1 = (index_y - 1) * sample_rate;
 			} else if (p.y <= 0.f) {
 				y1 = (index_y + 1) * sample_rate;
 			}
 			auto z1 = (index_z + 1) * sample_rate;
-			if (p.z >= (resolution - 1) * sample_rate) {
+			if (p.z >= resolution * sample_rate) {
 				z1 = (index_z - 1) * sample_rate;
 			} else if (p.x <= 0.f) {
 				z1 = (index_z + 1) * sample_rate;
