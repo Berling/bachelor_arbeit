@@ -29,12 +29,12 @@ namespace vbte {
 
 			data_ptr += sizeof(volume_data_header);
 
+			grid_.assign(actual_resolution * actual_resolution * actual_resolution, 0.f);
+
 			for (auto x = 0; x <= resolution_; ++x) {
-				grid_.emplace_back(std::vector<std::vector<float>>{});
 				for (auto y = 0; y <= resolution_; ++y) {
-					grid_[x].emplace_back(std::vector<float>{});
 					for (auto z = 0; z <= resolution_; ++z) {
-						grid_[x][y].emplace_back(*reinterpret_cast<const float*>(data_ptr));
+						grid_[z + actual_resolution * (y + actual_resolution * x)] = *reinterpret_cast<const float*>(data_ptr);
 						data_ptr += sizeof(float);
 					}
 				}

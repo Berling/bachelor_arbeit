@@ -19,7 +19,7 @@ namespace vtdg {
 		float length_;
 		size_t resolution_;
 		float sample_rate_;
-		std::vector<std::vector<std::vector<float>>> grid_;
+		std::vector<float> grid_;
 
 	public:
 		uniform_grid(float length, size_t resolution);

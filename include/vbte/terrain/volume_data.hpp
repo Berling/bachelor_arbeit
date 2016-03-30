@@ -20,7 +20,7 @@ namespace vbte {
 			float length_;
 			size_t resolution_;
 			float sample_rate_;
-			std::vector<std::vector<std::vector<float>>> grid_;
+			std::vector<float> grid_;
 
 		public:
 			volume_data(const std::string& file_name, const std::vector<char>& data);
@@ -41,11 +41,13 @@ namespace vbte {
 			}
 
 			auto& value(size_t x, size_t y, size_t z) {
-				return grid_.at(x).at(y).at(z);
+				auto actual_resolution = resolution_ + 1;
+				return grid_.at(z + actual_resolution * (y + actual_resolution * x));
 			}
 
 			auto& value(size_t x, size_t y, size_t z) const {
-				return grid_.at(x).at(y).at(z);
+				auto actual_resolution = resolution_ + 1;
+				return grid_.at(z + actual_resolution * (y + actual_resolution * x));
 			}
 
 			float sample(const glm::vec3& p) const;
