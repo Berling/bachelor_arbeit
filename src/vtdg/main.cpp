@@ -29,11 +29,21 @@ int main(int argc, char* argv[]) {
 		return 5.f * vtdg::perlin_noise::noise(p.x, p.y, p.z);
 	};
 
+	auto plane = [&](const glm::vec3& p) {
+		if (p.y <= grid_length / 5.f) {
+			return 1.f;
+		} else {
+			return 0.f;
+		}
+	};
+
 	auto sampling_function = std::string{argv[3]};
 	if (sampling_function == "sphere") {
 		grid.fill(sphere);
 	} else if (sampling_function == "noise") {
 		grid.fill(noise);
+	} else if (sampling_function == "plane") {
+		grid.fill(plane);
 	} else {
 		throw std::runtime_error{"no sampling function named " + sampling_function};
 	}
