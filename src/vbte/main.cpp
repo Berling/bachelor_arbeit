@@ -7,9 +7,11 @@
 #include <vbte/utils/stacktrace.hpp>
 
 int main(int argc, char* argv[]) {
-    try {
-        vbte::utils::initStacktrace(argv[0]);
-		vbte::core::engine e;
+		try {
+#ifdef STACKTRACE
+			vbte::utils::initStacktrace(argv[0]);
+#endif
+			vbte::core::engine e;
 		e.run();
 	} catch (std::exception& ex) {
 		auto result = SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", ex.what(), nullptr);

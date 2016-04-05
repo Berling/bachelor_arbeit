@@ -1,8 +1,11 @@
 #ifndef __VBTE_UTILS_STACKTRACE_HPP__
 #define __VBTE_UTILS_STACKTRACE_HPP__
 
+
 #include <string>
 #include <stdexcept>
+
+#ifdef STACKTRACE
 
 namespace vbte {
 	namespace utils {
@@ -19,4 +22,5 @@ namespace vbte {
 	}
 }
 
+#endif
 #endif
