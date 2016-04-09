@@ -150,7 +150,7 @@ namespace vbte {
 							grid.sample(c.vertices[6], resolution),
 							grid.sample(c.vertices[7], resolution)
 						};
-						auto cell_triangles = generate_triangles(grid, c, resolution, 1.f);
+						auto cell_triangles = generate_triangles(grid, c, resolution, 0.f);
 						vertices.insert(vertices.end(), cell_triangles.begin(), cell_triangles.end());
 					}
 				}
@@ -161,7 +161,7 @@ namespace vbte {
 
 		glm::vec3 interpolate_vertex(float isovalue, const glm::vec3& p0, const glm::vec3& p1, float s0, float s1) {
 			auto alpha = (isovalue - s0) / (s1 - s0);
-			return alpha * p0 + (1 - alpha) * p1;
+			return alpha * p1 + (1 - alpha) * p0;
 		}
 
 		glm::vec3 calculate_normal(const volume_data& grid, const glm::vec3& p, size_t resolution, float step_size) {
