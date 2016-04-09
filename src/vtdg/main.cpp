@@ -26,11 +26,7 @@ int main(int argc, char* argv[]) {
 	};
 
 	auto plane = [&](const glm::vec3& p) {
-		if (p.y <= grid_length / 5.f) {
-			return 1.f;
-		} else {
-			return 0.f;
-		}
+		return -p.y;
 	};
 
 	auto sampling_function = std::string{argv[3]};
