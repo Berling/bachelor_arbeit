@@ -110,7 +110,6 @@ namespace vbte {
 					light_program_.uniform("light_direction", glm::vec3{0.2f, 0.3f, 1.f});
 					light_program_.uniform("light_color", glm::vec3{1.f});
 					light_program_.uniform("light_energy", 1.0f);
-					light_program_.uniform("ambient_term", glm::vec3{0.1f});
 					light_program_.uniform("color", debug_face_color_);
 					geometry->draw();
 
@@ -144,7 +143,6 @@ namespace vbte {
 				light_program_.uniform("light_direction", glm::vec3{0.2f, 0.3f, 1.f});
 				light_program_.uniform("light_color", glm::vec3{1.f});
 				light_program_.uniform("light_energy", 1.0f);
-				light_program_.uniform("ambient_term", glm::vec3{0.1f});
 
 				for (auto& geometry : draw_queue_) {
 					light_program_.uniform("model", false, geometry->transform());
