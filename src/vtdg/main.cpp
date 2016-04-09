@@ -18,11 +18,7 @@ int main(int argc, char* argv[]) {
 		static auto center = glm::vec3{grid_length / 2.f};
 		static auto radius = grid_length / 3.f;
 
-		if (glm::dot(p - center, p - center) < radius * radius) {
-			return 1.f;
-		} else {
-			return 0.f;
-		}
+		return radius - glm::length(p - center);
 	};
 
 	auto noise = [&](const glm::vec3& p) {
