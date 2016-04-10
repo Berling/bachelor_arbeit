@@ -105,9 +105,9 @@ namespace vbte {
 					light_program_.uniform("view", false, camera.view());
 					light_program_.uniform("model", false, geometry->transform());
 					light_program_.uniform("mit", false, glm::inverseTranspose(geometry->transform()));
-					light_program_.uniform("view_vector", glm::vec3{2.f, 3.f, 5.f});
+					light_program_.uniform("view_vector", camera.position());
 					light_program_.uniform("color", debug_face_color_);
-					light_program_.uniform("light_direction", glm::vec3{0.2f, 0.3f, 1.f});
+					light_program_.uniform("light_direction", glm::vec3{0.f, 1.f, 0.f});
 					light_program_.uniform("light_color", glm::vec3{1.f});
 					light_program_.uniform("light_energy", 1.0f);
 					light_program_.uniform("color", debug_face_color_);
@@ -138,9 +138,9 @@ namespace vbte {
 				light_program_.use();
 				light_program_.uniform("projection", false, camera.projection());
 				light_program_.uniform("view", false, camera.view());
-				light_program_.uniform("view_vector", glm::vec3{2.f, 3.f, 5.f});
+				light_program_.uniform("view_vector", camera.position());
 				light_program_.uniform("color", debug_face_color_);
-				light_program_.uniform("light_direction", glm::vec3{0.2f, 0.3f, 1.f});
+				light_program_.uniform("light_direction", glm::vec3{0.f, 1.f, 0.f});
 				light_program_.uniform("light_color", glm::vec3{1.f});
 				light_program_.uniform("light_energy", 1.0f);
 
