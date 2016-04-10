@@ -63,7 +63,7 @@ namespace vbte {
 			//rendering_system_->draw(&c);
 			//rendering_system_->draw(&c1);
 			rendering_system_->draw(&t);
-			rendering_system_->draw_bounding_box(glm::vec3{2.5f}, glm::vec3{2.5f}, glm::angleAxis(0.f, glm::vec3{0.f}));
+			rendering_system_->draw_bounding_box(glm::vec3{t.volume_data().grid_length() / 2.f}, glm::vec3{t.volume_data().grid_length() / 2.f}, glm::angleAxis(0.f, glm::vec3{0.f}));
 			//rendering_system_->draw(&t2);
 			//rendering_system_->draw(&sphere);
 
