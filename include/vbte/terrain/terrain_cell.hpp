@@ -33,6 +33,10 @@ namespace vbte {
 			~terrain_cell() = default;
 
 			void draw() const override;
+
+			auto& volume_data() const noexcept {
+				return *volume_data_;
+			}
 		};
 	}
 }
