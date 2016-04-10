@@ -84,6 +84,10 @@ namespace vbte {
 			auto elevation() const noexcept {
 				return elevation_;
 			}
+
+			auto& position() const noexcept {
+				return position_;
+			}
 		};
 	}
 }
