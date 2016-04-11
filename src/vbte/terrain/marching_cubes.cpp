@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 
 #include <glm/gtc/constants.hpp>
@@ -129,6 +130,7 @@ namespace vbte {
 			tbb::concurrent_vector<rendering::basic_vertex> vertices;
 
 			auto sample_rate = grid.grid_length() / resolution;
+			auto start = std::chrono::high_resolution_clock::now();
 			tbb::parallel_for(tbb::blocked_range<size_t>(0, resolution),
 				[&](const tbb::blocked_range<size_t>& p) {
 					tbb::parallel_for(tbb::blocked_range<size_t>(0, resolution),
@@ -171,6 +173,8 @@ namespace vbte {
 					);
 				}
 			);
+			auto end = std::chrono::high_resolution_clock::now();
+			std::cout << "time: " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << std::endl;
 
 			return std::vector<rendering::basic_vertex>{vertices.begin(), vertices.end()};
 		}
