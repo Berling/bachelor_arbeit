@@ -57,7 +57,7 @@ workspace "bachelor_arbeit"
 		files "src/vbte/**.cpp"
 
 		configuration {"gmake", "linux" }
-			links {"GL", "GLEW", "SDL2"}
+			links {"GL", "GLEW", "SDL2", "tbb_debug"}
 
 		project "vtdg"
 			kind "ConsoleApp"
