@@ -3,6 +3,7 @@
 
 #include <glm/gtc/constants.hpp>
 
+#include <tbb/blocked_range3d.h>
 #include <tbb/concurrent_vector.h>
 #include <tbb/parallel_for.h>
 
@@ -131,46 +132,39 @@ namespace vbte {
 
 			auto sample_rate = grid.grid_length() / resolution;
 			auto start = std::chrono::high_resolution_clock::now();
-			tbb::parallel_for(tbb::blocked_range<size_t>(0, resolution),
-				[&](const tbb::blocked_range<size_t>& p) {
-					tbb::parallel_for(tbb::blocked_range<size_t>(0, resolution),
-						[&](const tbb::blocked_range<size_t>& r) {
-							tbb::parallel_for(tbb::blocked_range<size_t>(0, resolution),
-								[&](const tbb::blocked_range<size_t>& c) {
-									for (auto x = p.begin(); x != p.end(); ++x) {
-										for (auto y = r.begin(); y != r.end(); ++y) {
-											for (auto z = c.begin(); z != c.end(); ++z) {
-												auto p = glm::vec3{x, y , z} * sample_rate;
-												cell c;
-												c.vertices = std::array<glm::vec3, 8>{
-													p,
-													p + glm::vec3{sample_rate, 0.f, 0.f},
-													p + glm::vec3{sample_rate, 0.f, sample_rate},
-													p + glm::vec3{0.f, 0.f, sample_rate},
-													p + glm::vec3{0.f, sample_rate, 0.f},
-													p + glm::vec3{sample_rate, sample_rate, 0.f},
-													p + glm::vec3{sample_rate, sample_rate, sample_rate},
-													p + glm::vec3{0.f, sample_rate, sample_rate}
-												};
-												c.values = std::array<float, 8>{
-													grid.sample(c.vertices[0], resolution),
-													grid.sample(c.vertices[1], resolution),
-													grid.sample(c.vertices[2], resolution),
-													grid.sample(c.vertices[3], resolution),
-													grid.sample(c.vertices[4], resolution),
-													grid.sample(c.vertices[5], resolution),
-													grid.sample(c.vertices[6], resolution),
-													grid.sample(c.vertices[7], resolution)
-												};
-												auto cell_triangles = generate_triangles(grid, c, resolution, 0.f);
-												vertices.grow_by(cell_triangles.begin(), cell_triangles.end());
-											}
-										}
-									}
-								}
-							);
+			std::cout << "start" << std::endl;
+			tbb::parallel_for(tbb::blocked_range3d<size_t>(0, resolution, 0, resolution, 0, resolution),
+				[&](const tbb::blocked_range3d<size_t>& r) {
+					for (auto x = r.pages().begin(); x != r.pages().end(); ++x) {
+						for (auto y = r.rows().begin(); y != r.rows().end(); ++y) {
+							for (auto z = r.cols().begin(); z != r.cols().end(); ++z) {
+								auto p = glm::vec3{x, y , z} * sample_rate;
+								cell c;
+								c.vertices = std::array<glm::vec3, 8>{
+									p,
+									p + glm::vec3{sample_rate, 0.f, 0.f},
+									p + glm::vec3{sample_rate, 0.f, sample_rate},
+									p + glm::vec3{0.f, 0.f, sample_rate},
+									p + glm::vec3{0.f, sample_rate, 0.f},
+									p + glm::vec3{sample_rate, sample_rate, 0.f},
+									p + glm::vec3{sample_rate, sample_rate, sample_rate},
+									p + glm::vec3{0.f, sample_rate, sample_rate}
+								};
+								c.values = std::array<float, 8>{
+									grid.sample(c.vertices[0], resolution),
+									grid.sample(c.vertices[1], resolution),
+									grid.sample(c.vertices[2], resolution),
+									grid.sample(c.vertices[3], resolution),
+									grid.sample(c.vertices[4], resolution),
+									grid.sample(c.vertices[5], resolution),
+									grid.sample(c.vertices[6], resolution),
+									grid.sample(c.vertices[7], resolution)
+								};
+								auto cell_triangles = generate_triangles(grid, c, resolution, 0.f);
+								vertices.grow_by(cell_triangles.begin(), cell_triangles.end());
+							}
 						}
-					);
+					}
 				}
 			);
 			auto end = std::chrono::high_resolution_clock::now();
