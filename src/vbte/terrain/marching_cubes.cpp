@@ -2,6 +2,9 @@
 
 #include <glm/gtc/constants.hpp>
 
+#include <tbb/concurrent_vector.h>
+#include <tbb/parallel_for.h>
+
 #include <vbte/terrain/marching_cubes.hpp>
 #include <vbte/terrain/volume_data.hpp>
 
@@ -122,41 +125,54 @@ namespace vbte {
 		}
 
 		std::vector<rendering::basic_vertex> marching_cubes(const volume_data& grid, size_t resolution) {
-			std::vector<rendering::basic_vertex> vertices;
+			//std::vector<rendering::basic_vertex> vertices;
+			tbb::concurrent_vector<rendering::basic_vertex> vertices;
 
 			auto sample_rate = grid.grid_length() / resolution;
-			for (auto x = 0; x < resolution; ++x) {
-				for (auto y = 0; y < resolution; ++y) {
-					for (auto z = 0; z < resolution; ++z) {
-						auto p = glm::vec3{x, y , z} * sample_rate;
-						cell c;
-						c.vertices = std::array<glm::vec3, 8>{
-							p,
-							p + glm::vec3{sample_rate, 0.f, 0.f},
-							p + glm::vec3{sample_rate, 0.f, sample_rate},
-							p + glm::vec3{0.f, 0.f, sample_rate},
-							p + glm::vec3{0.f, sample_rate, 0.f},
-							p + glm::vec3{sample_rate, sample_rate, 0.f},
-							p + glm::vec3{sample_rate, sample_rate, sample_rate},
-							p + glm::vec3{0.f, sample_rate, sample_rate}
-						};
-						c.values = std::array<float, 8>{
-							grid.sample(c.vertices[0], resolution),
-							grid.sample(c.vertices[1], resolution),
-							grid.sample(c.vertices[2], resolution),
-							grid.sample(c.vertices[3], resolution),
-							grid.sample(c.vertices[4], resolution),
-							grid.sample(c.vertices[5], resolution),
-							grid.sample(c.vertices[6], resolution),
-							grid.sample(c.vertices[7], resolution)
-						};
-						auto cell_triangles = generate_triangles(grid, c, resolution, 0.f);
-						vertices.insert(vertices.end(), cell_triangles.begin(), cell_triangles.end());
-					}
+			tbb::parallel_for(tbb::blocked_range<size_t>(0, resolution),
+				[&](const tbb::blocked_range<size_t>& p) {
+					tbb::parallel_for(tbb::blocked_range<size_t>(0, resolution),
+						[&](const tbb::blocked_range<size_t>& r) {
+							tbb::parallel_for(tbb::blocked_range<size_t>(0, resolution),
+								[&](const tbb::blocked_range<size_t>& c) {
+									for (auto x = p.begin(); x != p.end(); ++x) {
+										for (auto y = r.begin(); y != r.end(); ++y) {
+											for (auto z = c.begin(); z != c.end(); ++z) {
+												auto p = glm::vec3{x, y , z} * sample_rate;
+												cell c;
+												c.vertices = std::array<glm::vec3, 8>{
+													p,
+													p + glm::vec3{sample_rate, 0.f, 0.f},
+													p + glm::vec3{sample_rate, 0.f, sample_rate},
+													p + glm::vec3{0.f, 0.f, sample_rate},
+													p + glm::vec3{0.f, sample_rate, 0.f},
+													p + glm::vec3{sample_rate, sample_rate, 0.f},
+													p + glm::vec3{sample_rate, sample_rate, sample_rate},
+													p + glm::vec3{0.f, sample_rate, sample_rate}
+												};
+												c.values = std::array<float, 8>{
+													grid.sample(c.vertices[0], resolution),
+													grid.sample(c.vertices[1], resolution),
+													grid.sample(c.vertices[2], resolution),
+													grid.sample(c.vertices[3], resolution),
+													grid.sample(c.vertices[4], resolution),
+													grid.sample(c.vertices[5], resolution),
+													grid.sample(c.vertices[6], resolution),
+													grid.sample(c.vertices[7], resolution)
+												};
+												auto cell_triangles = generate_triangles(grid, c, resolution, 0.f);
+												vertices.grow_by(cell_triangles.begin(), cell_triangles.end());
+											}
+										}
+									}
+								}
+							);
+						}
+					);
 				}
-			}
+			);
 
-			return vertices;
+			return std::vector<rendering::basic_vertex>{vertices.begin(), vertices.end()};
 		}
 
 		glm::vec3 interpolate_vertex(float isovalue, const glm::vec3& p0, const glm::vec3& p1, float s0, float s1) {
