@@ -173,6 +173,7 @@ namespace vbte {
 			glDisable(GL_DEPTH_TEST);
 
 			draw_queue_.clear();
+			bounding_box_draw_queue_.clear();
 		}
 
 		void rendering_system::draw(drawable* geometry) {
