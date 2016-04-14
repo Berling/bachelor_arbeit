@@ -7,7 +7,7 @@ namespace vbte {
 	namespace graphics {
 		template <GLenum target>
 		class buffer {
-		private:
+		protected:
 			GLuint id_;
 			GLenum usage_;
 

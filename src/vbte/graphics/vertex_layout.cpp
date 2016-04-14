@@ -12,6 +12,10 @@ namespace vbte {
 			vertex_attributes_.emplace_back(attribute);
 		}
 
+		void vertex_layout::emplace_back(const std::string& varying_name) {
+			transform_feedback_varyings_.emplace_back(varying_name);
+		}
+
 		void vertex_layout::setup_layout(const vertex_array& vertex_array, const std::unique_ptr<vertex_buffer>* buffers) noexcept {
 			vertex_array.bind();
 			auto i = uint32_t(0);
@@ -71,6 +75,14 @@ namespace vbte {
 			}
 
 			program.bind_frag_data_location(fragcolor_name, 0);
+
+			if (transform_feedback_varyings_.size() != 0) {
+				std::vector<const char*> varyings;
+				for (auto& v : transform_feedback_varyings_) {
+					varyings.emplace_back(v.c_str());
+				}
+				glTransformFeedbackVaryings(program.id_, varyings.size(), varyings.data(), GL_INTERLEAVED_ATTRIBS);
+			}
 		}
 	}
 }

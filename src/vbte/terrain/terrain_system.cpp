@@ -1,13 +1,52 @@
+#include <stdexcept>
+
 #include <vbte/core/engine.hpp>
+#include <vbte/graphics/graphics_system.hpp>
+#include <vbte/graphics/shader.hpp>
+#include <vbte/graphics/shader_manager.hpp>
 #include <vbte/terrain/terrain_system.hpp>
 
 namespace vbte {
 	namespace terrain {
 		terrain_system::terrain_system(core::engine& engine)
-		: engine_{engine}, volume_data_manager_{engine} {}
+		: engine_{engine}, volume_data_manager_{engine} {
+			init_transform_feedback_layout();
+			init_volume_data_layout();
+
+			auto& shader_manager = engine_.graphics_system().shader_manager();
+			init_marching_cubes_program(shader_manager);
+		}
 
 		void terrain_system::update(float delta_time) {
 
+		}
+
+		void terrain_system::init_marching_cubes_program(graphics::shader_manager& shader_manager) {
+			auto vertex_shader = shader_manager.load("shaders/marching_cubes.vert", GL_VERTEX_SHADER);
+			if (!vertex_shader) {
+				throw std::runtime_error{"could not load shader shaders/marching_cubes.vert"};
+			}
+			marching_cubes_program_.attach_shader(vertex_shader);
+			auto geometry_shader = shader_manager.load("shaders/marching_cubes.geom", GL_GEOMETRY_SHADER);
+			if (!geometry_shader) {
+				throw std::runtime_error{"could not load shader shaders/marching_cubes.geom"};
+			}
+			marching_cubes_program_.attach_shader(geometry_shader);
+			volume_data_layout_.setup_program(marching_cubes_program_, "none");
+			transform_feedback_layout_.setup_program(marching_cubes_program_, "none");
+			marching_cubes_program_.link();
+		}
+
+		void terrain_system::init_transform_feedback_layout() {
+			transform_feedback_layout_.emplace_back("output_vertex.position");
+		}
+
+		void terrain_system::init_volume_data_layout() {
+			auto size = 4 * sizeof(glm::vec4);
+			volume_data_layout_.emplace_back("_c00", 4, GL_FLOAT, false, size, 0);
+			volume_data_layout_.emplace_back("_c01", 4, GL_FLOAT, false, size, 16);
+			volume_data_layout_.emplace_back("_c10", 4, GL_FLOAT, false, size, 32);
+			volume_data_layout_.emplace_back("_c11", 4, GL_FLOAT, false, size, 48);
 		}
 	}
 }

@@ -29,6 +29,7 @@ namespace vbte {
 		class vertex_layout {
 		private:
 			std::vector<vertex_attribute> vertex_attributes_;
+			std::vector<std::string> transform_feedback_varyings_;
 
 		public:
 			vertex_layout() = default;
@@ -42,6 +43,7 @@ namespace vbte {
 
 			void emplace_back(const std::string& name, uint32_t size, GLenum type, bool normalized, size_t stride, intptr_t offset, int index = 0, int divisor = 0);
 			void emplace_back(const std::string& name, uint32_t size, GLenum type, bool normalized, size_t stride, intptr_t offset, intptr_t attribute_size, int factor, int index = 0, int divisor = 0);
+			void emplace_back(const std::string& varying_name);
 			void setup_layout(const vertex_array& vertex_array, const std::unique_ptr<vertex_buffer>* buffers) noexcept;
 			void setup_layout(const vertex_array& vertex_array, const vertex_buffer* buffers) noexcept;
 			void setup_layout(const vertex_array& vertex_array, const vertex_buffer** buffers) noexcept;

@@ -13,13 +13,14 @@
 namespace vbte {
 	namespace graphics {
 		using shader_ptr = std::shared_ptr<const shader>;
-		
+
 		class program {
 		private:
 			GLuint id_;
 			std::vector<shader_ptr> shaders_;
 			std::unordered_map<std::string, GLuint> uniform_locations_;
 
+			friend class transform_feedback_buffer;
 			friend class vertex_layout;
 
 		public:
