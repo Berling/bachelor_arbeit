@@ -1,3 +1,7 @@
+#ifndef __CL_ENABLE_EXCEPTIONS
+#define __CL_ENABLE_EXCEPTIONS
+#endif
+
 #include <stdexcept>
 
 #include <vbte/core/engine.hpp>
@@ -5,6 +9,7 @@
 #include <vbte/graphics/shader.hpp>
 #include <vbte/graphics/shader_manager.hpp>
 #include <vbte/terrain/terrain_system.hpp>
+#include <vbte/utils/logger.hpp>
 
 namespace vbte {
 	namespace terrain {
@@ -12,6 +17,7 @@ namespace vbte {
 		: engine_{engine}, volume_data_manager_{engine} {
 			init_transform_feedback_layout();
 			init_volume_data_layout();
+			init_opencl();
 
 			auto& shader_manager = engine_.graphics_system().shader_manager();
 			init_marching_cubes_program(shader_manager);
@@ -35,6 +41,33 @@ namespace vbte {
 			volume_data_layout_.setup_program(marching_cubes_program_, "none");
 			transform_feedback_layout_.setup_program(marching_cubes_program_, "none");
 			marching_cubes_program_.link();
+		}
+
+		void terrain_system::init_opencl() {
+			try {
+				std::vector<cl::Platform> platforms;
+				cl::Platform::get(&platforms);
+				auto& default_platform = platforms.at(0);
+				std::string platform_vendor;
+				default_platform.getInfo(static_cast<cl_platform_info>(CL_PLATFORM_VENDOR), &platform_vendor);
+
+				cl_context_properties properties[3] = {
+					CL_CONTEXT_PLATFORM,
+					(cl_context_properties)(default_platform)(),
+					0
+				};
+				default_context_ = cl::Context{CL_DEVICE_TYPE_GPU, properties};
+
+				const auto& devices = default_context_.getInfo<CL_CONTEXT_DEVICES>();
+				default_device_ = devices.at(0);
+				auto device_name = default_device_.getInfo<CL_DEVICE_NAME>();
+				auto device_version = default_device_.getInfo<CL_DEVICE_VERSION>();
+				utils::log << device_name << " " << device_version << std::endl;
+
+				default_queue_ = cl::CommandQueue{default_context_, default_device_};
+			} catch (const cl::Error& error) {
+				utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
+			}
 		}
 
 		void terrain_system::init_transform_feedback_layout() {

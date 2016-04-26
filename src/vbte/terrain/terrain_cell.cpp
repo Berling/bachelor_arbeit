@@ -1,8 +1,14 @@
+#ifndef __CL_ENABLE_EXCEPTIONS
+#define __CL_ENABLE_EXCEPTIONS
+#endif
+
 #include <iostream>
 #include <stdexcept>
 
 #include <glm/gtx/string_cast.hpp>
 
+#include <vbte/asset/asset.hpp>
+#include <vbte/asset/asset_manager.hpp>
 #include <vbte/core/engine.hpp>
 #include <vbte/graphics/transform_feedback_buffer.hpp>
 #include <vbte/graphics/vertex_layout.hpp>
@@ -12,6 +18,7 @@
 #include <vbte/terrain/terrain_system.hpp>
 #include <vbte/terrain/volume_data.hpp>
 #include <vbte/terrain/volume_data_manager.hpp>
+#include <vbte/utils/logger.hpp>
 
 namespace vbte {
 	namespace terrain {
@@ -22,42 +29,82 @@ namespace vbte {
 				throw std::runtime_error{"could not load file " + file_name};
 			}
 
-			auto vertices = marching_cubes(*volume_data_, volume_data_->resolution());
+			const auto& vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
+			std::cout << vertices[0].position.x << std::endl;
 			index_count_ = vertices.size();
 			vbo_.data(sizeof(rendering::basic_vertex) * index_count_, vertices.data());
 
 			engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
-
-			graphics::vertex_array volume_vao_;
-			std::array<glm::vec4, 4> cell = {
-				glm::vec4{1.f, 0.f, 0.f, 0.f},
-				glm::vec4{0.f, 1.f, 0.f, 0.f},
-				glm::vec4{0.f, 0.f, 1.f, 0.f},
-				glm::vec4{0.f, 0.f, 0.f, 1.f}
-			};
-			graphics::vertex_buffer volume_vbo_{4 * sizeof(glm::vec4), &cell[0], GL_STATIC_DRAW};
-			auto& volume_data_layout = engine.terrain_system().volume_data_layout();
-			volume_data_layout.setup_layout(volume_vao_, &volume_vbo_);
-			auto& marching_cubes_program = engine.terrain_system().marching_cubes_program();
-			graphics::transform_feedback_buffer tfb{3 * sizeof(glm::vec4), nullptr, GL_STATIC_READ};
-			volume_vao_.bind();
-			glEnable(GL_RASTERIZER_DISCARD);
-			tfb.bind_range(0, 0, 3 * sizeof(glm::vec4));
-			marching_cubes_program.use();
-			tfb.begin(GL_TRIANGLES);
-			glDrawArrays(GL_POINTS, 0, 1);
-			tfb.end();
-			glDisable(GL_RASTERIZER_DISCARD);
-
-			auto buffer_ptr = tfb.map_read<glm::vec3>();
-			for (auto i = 0; i < 3; ++i) {
-				std::cout << glm::to_string(buffer_ptr[i]) << std::endl;
-			}
 		}
 
 		void terrain_cell::draw() const {
 			vao_.bind();
 			glDrawArrays(GL_TRIANGLES, 0, index_count_);
+		}
+
+		std::vector<rendering::basic_vertex> terrain_cell::marching_cubes(const terrain::volume_data& grid, size_t resolution) {
+			try {
+				auto& terrain_system = engine_.terrain_system();
+				auto& default_context = terrain_system.default_context();
+				auto& default_device = terrain_system.default_device();
+
+				auto source_file = engine_.asset_manager().load("opencl/marching_cubes_kernel.cl");
+				if (!source_file) {
+					throw std::runtime_error{"could not load kernel from opencl/marching_cubes_kernel.cl"};
+				}
+				auto source_code = std::string{source_file->content().begin(), source_file->content().end()};
+
+				auto source = cl::Program::Sources{1, std::make_pair(source_code.c_str(), source_code.length() + 1)};
+				auto program = cl::Program{default_context, source};
+				utils::log << "SEGFAULT!" << std::endl;
+				auto error = program.build({default_device});
+				utils::log << "SEGFAULT!" << std::endl;
+				if (error != CL_SUCCESS) {
+					utils::log << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(default_device) << std::endl;
+					utils::log << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(default_device) << std::endl;
+					utils::log << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) << std::endl;
+				}
+
+				auto kernel = cl::Kernel{program, "marching_cubes"};
+
+				auto volume = cl::Buffer{default_context, CL_MEM_READ_ONLY, grid.grid().size() * sizeof(float)};
+				auto estimated_vertex_count = 744;//resolution * resolution * resolution * 15;
+				auto vertex_buffer = cl::Buffer{default_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex)};
+				auto vertex_count = 0;
+				auto vertex_counter = cl::Buffer{default_context, CL_MEM_READ_ONLY, sizeof(int)};
+
+				auto& default_command_queue = terrain_system.default_command_queue();
+				default_command_queue.enqueueWriteBuffer(volume, CL_TRUE, 0, grid.grid().size() * sizeof(float), grid.grid().data());
+				default_command_queue.enqueueWriteBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
+
+				kernel.setArg(0, volume);
+				kernel.setArg(1, static_cast<uint32_t>(grid.resolution()));
+				kernel.setArg(2, static_cast<uint32_t>(resolution));
+				kernel.setArg(3, grid.grid_length());
+				kernel.setArg(4, vertex_buffer);
+				kernel.setArg(5, vertex_counter);
+				cl::Event event;
+				default_command_queue.enqueueNDRangeKernel(
+					kernel,
+					cl::NullRange,
+					cl::NDRange{resolution, resolution, resolution},
+					cl::NDRange{4, 4, 4},
+					nullptr,
+					&event
+				);
+				std::vector<rendering::basic_vertex> vertices;
+				vertices.assign(estimated_vertex_count, rendering::basic_vertex{glm::vec3{0.f}, glm::vec3{0.f}});
+				default_command_queue.enqueueReadBuffer(vertex_buffer, CL_TRUE, 0, estimated_vertex_count * sizeof(rendering::basic_vertex), vertices.data());
+				//default_command_queue.enqueueReadBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
+				event.wait();
+
+				std::cout << vertex_count << std::endl;
+
+				return vertices;
+			} catch (const cl::Error& error) {
+				utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
+			}
+			return std::vector<rendering::basic_vertex>{};
 		}
 	}
 }

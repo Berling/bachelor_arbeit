@@ -7,6 +7,7 @@
 
 #include <vbte/graphics/buffer.hpp>
 #include <vbte/graphics/vertex_array.hpp>
+#include <vbte/rendering/basic_vertex.hpp>
 #include <vbte/rendering/drawable.hpp>
 
 namespace vbte {
@@ -23,7 +24,7 @@ namespace vbte {
 	namespace terrain {
 		class terrain_cell : public rendering::drawable {
 		private:
-			std::shared_ptr<const volume_data> volume_data_;
+			std::shared_ptr<const terrain::volume_data> volume_data_;
 			graphics::vertex_array vao_;
 			graphics::vertex_buffer vbo_;
 			size_t index_count_;
@@ -37,6 +38,9 @@ namespace vbte {
 			auto& volume_data() const noexcept {
 				return *volume_data_;
 			}
+
+		private:
+			std::vector<rendering::basic_vertex> marching_cubes(const terrain::volume_data& grid, size_t resolution);
 		};
 	}
 }

@@ -47,17 +47,17 @@ workspace "bachelor_arbeit"
 
 		if _OPTIONS["cc"] == "clang" then
 			toolset "clang"
-			buildoptions "-stdlib=libc++"
-			links {
-				"c++",
-				"c++abi"
-			}
+			--buildoptions "-stdlib=libc++"
+			--links {
+			--	"c++",
+			--	"c++abi"
+			--}
 		end
 
 		files "src/vbte/**.cpp"
 
 		configuration {"gmake", "linux" }
-			links {"GL", "GLEW", "SDL2", "tbb_debug"}
+			links {"GL", "GLEW", "SDL2", "tbb_debug", "OpenCL"}
 
 		project "vtdg"
 			kind "ConsoleApp"
@@ -77,11 +77,11 @@ workspace "bachelor_arbeit"
 
 			if _OPTIONS["cc"] == "clang" then
 				toolset "clang"
-				buildoptions "-stdlib=libc++"
-				links {
-					"c++",
-					"c++abi"
-				}
+				--buildoptions "-stdlib=libc++"
+				--links {
+				--	"c++",
+				--	"c++abi"
+				--}
 			end
 
 			files "src/vtdg/**.cpp"

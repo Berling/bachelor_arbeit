@@ -64,6 +64,10 @@ namespace vbte {
 			auto sample_rate() const noexcept {
 				return sample_rate_;
 			}
+
+			auto& grid() const noexcept {
+				return grid_;
+			}
 		};
 	}
 }
