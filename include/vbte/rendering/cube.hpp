@@ -22,7 +22,7 @@ namespace vbte {
 			graphics::index_buffer ibo_;
 
 		public:
-			cube(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& half_extend);
+			cube(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const glm::vec4& half_extend);
 			~cube() = default;
 
 			void draw() const override;

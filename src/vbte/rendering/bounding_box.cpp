@@ -9,17 +9,17 @@ namespace vbte {
 	namespace rendering {
 		bounding_box::bounding_box(core::engine& engine)
 		: drawable{engine, glm::vec3{0.f}, glm::angleAxis(0.f, glm::vec3(0.f))}, vbo_{GL_STATIC_DRAW}, ibo_{GL_STATIC_DRAW} {
-			auto zero = glm::vec3{0.f};
+			auto zero = glm::vec4{0.f};
 			std::vector<basic_vertex> vertices = {
-				{glm::vec3{-0.5f, -0.5f, 0.5f}, zero},
-				{glm::vec3{0.5f, -0.5f, 0.5f}, zero},
-				{glm::vec3{-0.5f, 0.5f, 0.5f}, zero},
-				{glm::vec3{0.5f, 0.5f, 0.5f}, zero},
+				{glm::vec4{-0.5f, -0.5f, 0.5f, 0.f}, zero},
+				{glm::vec4{0.5f, -0.5f, 0.5f, 0.f}, zero},
+				{glm::vec4{-0.5f, 0.5f, 0.5f, 0.f}, zero},
+				{glm::vec4{0.5f, 0.5f, 0.5f, 0.f}, zero},
 
-				{glm::vec3{-0.5f, -0.5f, -0.5f}, zero},
-				{glm::vec3{0.5f, -0.5f, -0.5f}, zero},
-				{glm::vec3{-0.5f, 0.5f, -0.5f}, zero},
-				{glm::vec3{0.5f, 0.5f, -0.5f}, zero}
+				{glm::vec4{-0.5f, -0.5f, -0.5f, 0.f}, zero},
+				{glm::vec4{0.5f, -0.5f, -0.5f, 0.f}, zero},
+				{glm::vec4{-0.5f, 0.5f, -0.5f, 0.f}, zero},
+				{glm::vec4{0.5f, 0.5f, -0.5f, 0.f}, zero}
 			};
 			vbo_.data(sizeof(basic_vertex) * vertices.size(), vertices.data());
 

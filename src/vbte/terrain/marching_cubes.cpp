@@ -34,85 +34,85 @@ namespace vbte {
 			if (edge_table[cube_index] & 1) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[0], grid_cell.vertices[1], grid_cell.values[0], grid_cell.values[1]);
 				vertex_list[0] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 2) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[1], grid_cell.vertices[2], grid_cell.values[1], grid_cell.values[2]);
 				vertex_list[1] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 4) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[2], grid_cell.values[3], grid_cell.values[2]);
 				vertex_list[2] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 8) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[0], grid_cell.values[3], grid_cell.values[0]);
 				vertex_list[3] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 16) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[4], grid_cell.vertices[5], grid_cell.values[4], grid_cell.values[5]);
 				vertex_list[4] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 32) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[5], grid_cell.vertices[6], grid_cell.values[5], grid_cell.values[6]);
 				vertex_list[5] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 64) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[6], grid_cell.vertices[7], grid_cell.values[6], grid_cell.values[7]);
 				vertex_list[6] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 128) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[7], grid_cell.vertices[4], grid_cell.values[7], grid_cell.values[4]);
 				vertex_list[7] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 256) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[0], grid_cell.vertices[4], grid_cell.values[0], grid_cell.values[4]);
 				vertex_list[8] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 512) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[1], grid_cell.vertices[5], grid_cell.values[1], grid_cell.values[5]);
 				vertex_list[9] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 1024) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[2], grid_cell.vertices[6], grid_cell.values[2], grid_cell.values[6]);
 				vertex_list[10] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 			if (edge_table[cube_index] & 2048) {
 				auto vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[7], grid_cell.values[3], grid_cell.values[7]);
 				vertex_list[11] = rendering::basic_vertex{
-					vertex,
-					calculate_normal(grid, vertex, resolution, half_sample_rate)
+					glm::vec4{vertex, 0.f},
+					glm::vec4{calculate_normal(grid, vertex, resolution, half_sample_rate), 0.f}
 				};
 			}
 
@@ -127,17 +127,22 @@ namespace vbte {
 		}
 
 		std::vector<rendering::basic_vertex> marching_cubes(const volume_data& grid, size_t resolution) {
-			//std::vector<rendering::basic_vertex> vertices;
-			tbb::concurrent_vector<rendering::basic_vertex> vertices;
+			std::vector<rendering::basic_vertex> vertices;
+			//tbb::concurrent_vector<rendering::basic_vertex> vertices;
 
 			auto sample_rate = grid.grid_length() / resolution;
+			//tbb::parallel_for(tbb::blocked_range3d<size_t>(0, resolution, 0, resolution, 0, resolution),
+			//	[&](const tbb::blocked_range3d<size_t>& r) {
+			//		for (auto x = r.pages().begin(); x != r.pages().end(); ++x) {
+			//			for (auto y = r.rows().begin(); y != r.rows().end(); ++y) {
+			//				for (auto z = r.cols().begin(); z != r.cols().end(); ++z) {
+
 			auto start = std::chrono::high_resolution_clock::now();
 			std::cout << "start" << std::endl;
-			tbb::parallel_for(tbb::blocked_range3d<size_t>(0, resolution, 0, resolution, 0, resolution),
-				[&](const tbb::blocked_range3d<size_t>& r) {
-					for (auto x = r.pages().begin(); x != r.pages().end(); ++x) {
-						for (auto y = r.rows().begin(); y != r.rows().end(); ++y) {
-							for (auto z = r.cols().begin(); z != r.cols().end(); ++z) {
+
+			for (auto x = 0; x < resolution; ++x) {
+				for (auto y = 0; y < resolution; ++y) {
+					for (auto z = 0; z < resolution; ++z) {
 								auto p = glm::vec3{x, y , z} * sample_rate;
 								cell c;
 								c.vertices = std::array<glm::vec3, 8>{
@@ -161,14 +166,19 @@ namespace vbte {
 									grid.sample(c.vertices[7], resolution)
 								};
 								auto cell_triangles = generate_triangles(grid, c, resolution, 0.f);
-								vertices.grow_by(cell_triangles.begin(), cell_triangles.end());
+								vertices.insert(vertices.end(), cell_triangles.begin(), cell_triangles.end());
 							}
 						}
 					}
-				}
-			);
-			auto end = std::chrono::high_resolution_clock::now();
-			std::cout << "time: " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << std::endl;
+
+					auto end = std::chrono::high_resolution_clock::now();
+					std::cout << "time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+								//vertices.grow_by(cell_triangles.begin(), cell_triangles.end());
+			//				}
+			//			}
+			//		}
+			//	}
+			//);
 
 			return std::vector<rendering::basic_vertex>{vertices.begin(), vertices.end()};
 		}

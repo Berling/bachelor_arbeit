@@ -7,38 +7,38 @@
 
 namespace vbte {
 	namespace rendering {
-		cube::cube(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const glm::vec3& half_extend)
+		cube::cube(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const glm::vec4& half_extend)
 		: drawable{engine, position, rotation}, vbo_{GL_STATIC_DRAW}, ibo_{GL_STATIC_DRAW} {
 			std::vector<basic_vertex> vertices = {
-				{{half_extend}, glm::vec3{0.f, 1.f, 0.f}},
-				{{half_extend * glm::vec3{-1.f, 1.f, 1.f}}, glm::vec3{0.f, 1.f, 0.f}},
-				{{half_extend * glm::vec3{-1.f, 1.f, -1.f}}, glm::vec3{0.f, 1.f, 0.f}},
-				{{half_extend * glm::vec3{1.f, 1.f, -1.f}}, glm::vec3{0.f, 1.f, 0.f}},
+				{{half_extend}, glm::vec4{0.f, 1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, 1.f, 1.f, 0.f}}, glm::vec4{0.f, 1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, 1.f, -1.f, 0.f}}, glm::vec4{0.f, 1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, 1.f, -1.f, 0.f}}, glm::vec4{0.f, 1.f, 0.f, 0.f}},
 
-				{{half_extend * glm::vec3{1.f, -1.f, 1.f}}, glm::vec3{0.f, -1.f, 0.f}},
-				{{half_extend * glm::vec3{-1.f, -1.f, 1.f}}, glm::vec3{0.f, -1.f, 0.f}},
-				{{half_extend * glm::vec3{-1.f}}, glm::vec3{0.f, -1.f, 0.f}},
-				{{half_extend * glm::vec3{1.f, -1.f, -1.f}}, glm::vec3{0.f, -1.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, -1.f, 1.f, 0.f}}, glm::vec4{0.f, -1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, -1.f, 1.f, 0.f}}, glm::vec4{0.f, -1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, -1.f, -1.f, 0.f}}, glm::vec4{0.f, -1.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, -1.f, -1.f, 0.f}}, glm::vec4{0.f, -1.f, 0.f, 0.f}},
 
-				{{half_extend}, glm::vec3{0.f, 0.f, 1.f}},
-				{{half_extend * glm::vec3{-1.f, 1.f, 1.f}}, glm::vec3{0.f, 0.f, 1.f}},
-				{{half_extend * glm::vec3{1.f, -1.f, 1.f}}, glm::vec3{0.f, 0.f, 1.f}},
-				{{half_extend * glm::vec3{-1.f, -1.f, 1.f}}, glm::vec3{0.f, 0.f, 1.f}},
+				{{half_extend}, glm::vec4{0.f, 0.f, 1.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, 1.f, 1.f, 0.f}}, glm::vec4{0.f, 0.f, 1.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, -1.f, 1.f, 0.f}}, glm::vec4{0.f, 0.f, 1.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, -1.f, 1.f, 0.f}}, glm::vec4{0.f, 0.f, 1.f, 0.f}},
 
-				{{half_extend * glm::vec3{-1.f, 1.f, -1.f}}, glm::vec3{0.f, 0.f, -1.f}},
-				{{half_extend * glm::vec3{1.f, 1.f, -1.f}}, glm::vec3{0.f, 0.f, -1.f}},
-				{{half_extend * glm::vec3{-1.f}}, glm::vec3{0.f, 0.f, -1.f}},
-				{{half_extend * glm::vec3{1.f, -1.f, -1.f}}, glm::vec3{0.f, 0.f, -1.f}},
+				{{half_extend * glm::vec4{-1.f, 1.f, -1.f, 0.f}}, glm::vec4{0.f, 0.f, -1.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, 1.f, -1.f, 0.f}}, glm::vec4{0.f, 0.f, -1.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, -1.f, -1.f, 0.f}}, glm::vec4{0.f, 0.f, -1.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, -1.f, -1.f, 0.f}}, glm::vec4{0.f, 0.f, -1.f, 0.f}},
 
-				{{half_extend}, glm::vec3{1.f, 0.f, 0.f}},
-				{{half_extend * glm::vec3{1.f, 1.f, -1.f}}, glm::vec3{1.f, 0.f, 0.f}},
-				{{half_extend * glm::vec3{1.f, -1.f, 1.f}}, glm::vec3{1.f, 0.f, 0.f}},
-				{{half_extend * glm::vec3{1.f, -1.f, -1.f}}, glm::vec3{1.f, 0.f, 0.f}},
+				{{half_extend}, glm::vec4{1.f, 0.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, 1.f, -1.f, 0.f}}, glm::vec4{1.f, 0.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, -1.f, 1.f, 0.f}}, glm::vec4{1.f, 0.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{1.f, -1.f, -1.f, 0.f}}, glm::vec4{1.f, 0.f, 0.f, 0.f}},
 
-				{{half_extend * glm::vec3{-1.f, 1.f, 1.f}}, glm::vec3{-1.f, 0.f, 0.f}},
-				{{half_extend * glm::vec3{-1.f, 1.f, -1.f}}, glm::vec3{-1.f, 0.f, 0.f}},
-				{{half_extend * glm::vec3{-1.f, -1.f, 1.f}}, glm::vec3{-1.f, 0.f, 0.f}},
-				{{half_extend * glm::vec3{-1.f}}, glm::vec3{-1.f, 0.f, 0.f}}
+				{{half_extend * glm::vec4{-1.f, 1.f, 1.f, 0.f}}, glm::vec4{-1.f, 0.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, 1.f, -1.f, 0.f}}, glm::vec4{-1.f, 0.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, -1.f, 1.f, 0.f}}, glm::vec4{-1.f, 0.f, 0.f, 0.f}},
+				{{half_extend * glm::vec4{-1.f, -1.f, -1.f, 0.f}}, glm::vec4{-1.f, 0.f, 0.f, 0.f}}
 			};
 			vbo_.data(sizeof(basic_vertex) * vertices.size(), vertices.data());
 

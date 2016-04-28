@@ -302,9 +302,9 @@ struct cell {
 	float values[8];
 };
 
-float value(global const float* volume, size_t sample_resolution, size_t x, size_t y, size_t z) {
-	size_t actual_sample_resolution = sample_resolution + 1;
-	return volume[z + actual_sample_resolution * (y + actual_sample_resolution * x)];
+float value(global const float* volume, size_t resolution, size_t x, size_t y, size_t z) {
+	size_t actual_resolution = resolution + 1;
+	return volume[z + actual_resolution * (y + actual_resolution * x)];
 }
 
 float sample(global const float* volume, size_t resolution, float grid_length, float3 p, size_t sample_resolution) {
@@ -389,13 +389,11 @@ void generate_triangles(global const float* volume,
 	if (grid_cell.values[6] < isovalue) { cube_index |= 64; }
 	if (grid_cell.values[7] < isovalue) { cube_index |= 128; }
 
-	vertices[0].position = (float3)(triangle_table[cube_index][0], 0.f, 0.f);
-
-	/*if (cube_index == 0) {
+	if (cube_index == 0) {
 		return;
-	}*/
+	}
 
-	/*float sample_rate = grid_length / sample_resolution;
+	float sample_rate = grid_length / sample_resolution;
 	float half_sample_rate = sample_rate / 2.f;
 
 	struct basic_vertex vertex_list[12];
@@ -458,12 +456,19 @@ void generate_triangles(global const float* volume,
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[7], grid_cell.values[3], grid_cell.values[7]);
 		vertex_list[11].position = vertex;
 		vertex_list[11].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
-	}*/
+	}
+
+	for (int i = 0; triangle_table[cube_index][i] != - 1; i += 3) {
+		int index = atomic_add(vertex_count, 3);
+		vertices[index] = vertex_list[triangle_table[cube_index][i]];
+		vertices[index + 1] = vertex_list[triangle_table[cube_index][i + 1]];
+		vertices[index + 2] = vertex_list[triangle_table[cube_index][i + 2]];
+	}
 }
 
 kernel void marching_cubes(global const float* volume,
-													 size_t resolution,
-													 size_t sample_resolution,
+													 uint resolution,
+													 uint sample_resolution,
 													 float grid_length,
 													 global struct basic_vertex* vertices,
 													 global volatile int* vertex_count) {

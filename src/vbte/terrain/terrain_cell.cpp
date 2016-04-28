@@ -2,6 +2,7 @@
 #define __CL_ENABLE_EXCEPTIONS
 #endif
 
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
 
@@ -29,8 +30,10 @@ namespace vbte {
 				throw std::runtime_error{"could not load file " + file_name};
 			}
 
-			const auto& vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
-			std::cout << vertices[0].position.x << std::endl;
+			//const auto& vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
+			const auto& vertices = terrain::marching_cubes(*volume_data_, volume_data_->resolution());
+			std::cout << vertices.size() << std::endl;
+			std::cout << vertices[0].position.x << " " << vertices[0].position.y << " " << vertices[0].position.z << std::endl;
 			index_count_ = vertices.size();
 			vbo_.data(sizeof(rendering::basic_vertex) * index_count_, vertices.data());
 
@@ -56,9 +59,7 @@ namespace vbte {
 
 				auto source = cl::Program::Sources{1, std::make_pair(source_code.c_str(), source_code.length() + 1)};
 				auto program = cl::Program{default_context, source};
-				utils::log << "SEGFAULT!" << std::endl;
 				auto error = program.build({default_device});
-				utils::log << "SEGFAULT!" << std::endl;
 				if (error != CL_SUCCESS) {
 					utils::log << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(default_device) << std::endl;
 					utils::log << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(default_device) << std::endl;
@@ -68,14 +69,19 @@ namespace vbte {
 				auto kernel = cl::Kernel{program, "marching_cubes"};
 
 				auto volume = cl::Buffer{default_context, CL_MEM_READ_ONLY, grid.grid().size() * sizeof(float)};
-				auto estimated_vertex_count = 744;//resolution * resolution * resolution * 15;
+				auto estimated_vertex_count = resolution * resolution * resolution * 15;
 				auto vertex_buffer = cl::Buffer{default_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex)};
 				auto vertex_count = 0;
-				auto vertex_counter = cl::Buffer{default_context, CL_MEM_READ_ONLY, sizeof(int)};
+				auto vertex_counter = cl::Buffer{default_context, CL_MEM_READ_WRITE, sizeof(int)};
 
 				auto& default_command_queue = terrain_system.default_command_queue();
 				default_command_queue.enqueueWriteBuffer(volume, CL_TRUE, 0, grid.grid().size() * sizeof(float), grid.grid().data());
 				default_command_queue.enqueueWriteBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
+
+				utils::log << "resolution: " << resolution << std::endl;
+
+				auto start = std::chrono::high_resolution_clock::now();
+				std::cout << "start" << std::endl;
 
 				kernel.setArg(0, volume);
 				kernel.setArg(1, static_cast<uint32_t>(grid.resolution()));
@@ -93,12 +99,15 @@ namespace vbte {
 					&event
 				);
 				std::vector<rendering::basic_vertex> vertices;
-				vertices.assign(estimated_vertex_count, rendering::basic_vertex{glm::vec3{0.f}, glm::vec3{0.f}});
+				vertices.assign(estimated_vertex_count, rendering::basic_vertex{glm::vec4{0.f}, glm::vec4{0.f}});
 				default_command_queue.enqueueReadBuffer(vertex_buffer, CL_TRUE, 0, estimated_vertex_count * sizeof(rendering::basic_vertex), vertices.data());
-				//default_command_queue.enqueueReadBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
+				default_command_queue.enqueueReadBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
 				event.wait();
 
-				std::cout << vertex_count << std::endl;
+				auto end = std::chrono::high_resolution_clock::now();
+				std::cout << "time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+				vertices.resize(vertex_count);
 
 				return vertices;
 			} catch (const cl::Error& error) {
