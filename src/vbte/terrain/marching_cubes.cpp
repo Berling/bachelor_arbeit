@@ -197,5 +197,60 @@ namespace vbte {
 
 			return glm::normalize(gradient);
 		}
+
+		size_t estimate_vertex_count(const volume_data& grid, size_t resolution) {
+			auto vertex_count = size_t{0};
+			auto sample_rate = grid.grid_length() / resolution;
+
+			for (auto x = 0; x < resolution; ++x) {
+				for (auto y = 0; y < resolution; ++y) {
+					for (auto z = 0; z < resolution; ++z) {
+						auto p = glm::vec3{x, y , z} * sample_rate;
+						cell grid_cell;
+						grid_cell.vertices = std::array<glm::vec3, 8>{
+							p,
+							p + glm::vec3{sample_rate, 0.f, 0.f},
+							p + glm::vec3{sample_rate, 0.f, sample_rate},
+							p + glm::vec3{0.f, 0.f, sample_rate},
+							p + glm::vec3{0.f, sample_rate, 0.f},
+							p + glm::vec3{sample_rate, sample_rate, 0.f},
+							p + glm::vec3{sample_rate, sample_rate, sample_rate},
+							p + glm::vec3{0.f, sample_rate, sample_rate}
+						};
+						grid_cell.values = std::array<float, 8>{
+							grid.sample(grid_cell.vertices[0], resolution),
+							grid.sample(grid_cell.vertices[1], resolution),
+							grid.sample(grid_cell.vertices[2], resolution),
+							grid.sample(grid_cell.vertices[3], resolution),
+							grid.sample(grid_cell.vertices[4], resolution),
+							grid.sample(grid_cell.vertices[5], resolution),
+							grid.sample(grid_cell.vertices[6], resolution),
+							grid.sample(grid_cell.vertices[7], resolution)
+						};
+
+						auto isovalue = 0.f;
+						auto cube_index = 0;
+						if (grid_cell.values[0] < isovalue) { cube_index |= 1; }
+						if (grid_cell.values[1] < isovalue) { cube_index |= 2; }
+						if (grid_cell.values[2] < isovalue) { cube_index |= 4; }
+						if (grid_cell.values[3] < isovalue) { cube_index |= 8; }
+						if (grid_cell.values[4] < isovalue) { cube_index |= 16; }
+						if (grid_cell.values[5] < isovalue) { cube_index |= 32; }
+						if (grid_cell.values[6] < isovalue) { cube_index |= 64; }
+						if (grid_cell.values[7] < isovalue) { cube_index |= 128; }
+
+						if (cube_index == 0) {
+							continue;
+						}
+
+						for (auto i = 0; triangle_table[cube_index][i] != -1; i += 3) {
+							vertex_count += 3;
+						}
+					}
+				}
+			}
+
+			return vertex_count;
+		}
 	}
 }

@@ -318,5 +318,6 @@ namespace vbte {
       std::vector<rendering::basic_vertex> marching_cubes(const volume_data& grid, size_t resolution);
       glm::vec3 interpolate_vertex(float isovalue, const glm::vec3& p0, const glm::vec3& p1, float s0, float s1);
       glm::vec3 calculate_normal(const volume_data& grid, const glm::vec3& p, size_t resolution, float step_size = 0.1f);
+	  size_t estimate_vertex_count(const volume_data& grid, size_t resolution);
     }
 }
