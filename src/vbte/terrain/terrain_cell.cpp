@@ -30,10 +30,7 @@ namespace vbte {
 				throw std::runtime_error{"could not load file " + file_name};
 			}
 
-			//const auto& vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
-			const auto& vertices = terrain::marching_cubes(*volume_data_, volume_data_->resolution());
-			std::cout << vertices.size() << std::endl;
-			std::cout << vertices[0].position.x << " " << vertices[0].position.y << " " << vertices[0].position.z << std::endl;
+			const auto& vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
 			index_count_ = vertices.size();
 			vbo_.data(sizeof(rendering::basic_vertex) * index_count_, vertices.data());
 
@@ -69,7 +66,7 @@ namespace vbte {
 				auto kernel = cl::Kernel{program, "marching_cubes"};
 
 				auto volume = cl::Buffer{default_context, CL_MEM_READ_ONLY, grid.grid().size() * sizeof(float)};
-				auto estimated_vertex_count = resolution * resolution * resolution * 15;
+				auto estimated_vertex_count = estimate_vertex_count(grid, resolution);
 				auto vertex_buffer = cl::Buffer{default_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex)};
 				auto vertex_count = 0;
 				auto vertex_counter = cl::Buffer{default_context, CL_MEM_READ_WRITE, sizeof(int)};
@@ -77,11 +74,6 @@ namespace vbte {
 				auto& default_command_queue = terrain_system.default_command_queue();
 				default_command_queue.enqueueWriteBuffer(volume, CL_TRUE, 0, grid.grid().size() * sizeof(float), grid.grid().data());
 				default_command_queue.enqueueWriteBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
-
-				utils::log << "resolution: " << resolution << std::endl;
-
-				auto start = std::chrono::high_resolution_clock::now();
-				std::cout << "start" << std::endl;
 
 				kernel.setArg(0, volume);
 				kernel.setArg(1, static_cast<uint32_t>(grid.resolution()));
@@ -103,9 +95,6 @@ namespace vbte {
 				default_command_queue.enqueueReadBuffer(vertex_buffer, CL_TRUE, 0, estimated_vertex_count * sizeof(rendering::basic_vertex), vertices.data());
 				default_command_queue.enqueueReadBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
 				event.wait();
-
-				auto end = std::chrono::high_resolution_clock::now();
-				std::cout << "time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
 				vertices.resize(vertex_count);
 
