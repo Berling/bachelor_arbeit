@@ -48,23 +48,6 @@ namespace vbte {
 				auto& default_context = compute_context.get();
 				auto& default_device = compute_context.device();
 
-				auto source_file = engine_.asset_manager().load("opencl/marching_cubes_kernel.cl");
-				if (!source_file) {
-					throw std::runtime_error{"could not load kernel from opencl/marching_cubes_kernel.cl"};
-				}
-				auto source_code = std::string{source_file->content().begin(), source_file->content().end()};
-
-				auto source = cl::Program::Sources{1, std::make_pair(source_code.c_str(), source_code.length() + 1)};
-				auto program = cl::Program{default_context, source};
-				auto error = program.build({default_device});
-				if (error != CL_SUCCESS) {
-					utils::log << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(default_device) << std::endl;
-					utils::log << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(default_device) << std::endl;
-					utils::log << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) << std::endl;
-				}
-
-				auto kernel = cl::Kernel{program, "marching_cubes"};
-
 				auto volume = cl::Buffer{default_context, CL_MEM_READ_ONLY, grid.grid().size() * sizeof(float)};
 				auto estimated_vertex_count = estimate_vertex_count(grid, resolution);
 				auto vertex_buffer = cl::Buffer{default_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex)};
@@ -75,15 +58,17 @@ namespace vbte {
 				default_command_queue.enqueueWriteBuffer(volume, CL_TRUE, 0, grid.grid().size() * sizeof(float), grid.grid().data());
 				default_command_queue.enqueueWriteBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
 
-				kernel.setArg(0, volume);
-				kernel.setArg(1, static_cast<uint32_t>(grid.resolution()));
-				kernel.setArg(2, static_cast<uint32_t>(resolution));
-				kernel.setArg(3, grid.grid_length());
-				kernel.setArg(4, vertex_buffer);
-				kernel.setArg(5, vertex_counter);
+				auto& kernel = engine_.terrain_system().marching_cubes_kernel();
+
+				kernel.arg(0, volume);
+				kernel.arg(1, static_cast<uint32_t>(grid.resolution()));
+				kernel.arg(2, static_cast<uint32_t>(resolution));
+				kernel.arg(3, grid.grid_length());
+				kernel.arg(4, vertex_buffer);
+				kernel.arg(5, vertex_counter);
 				cl::Event event;
 				default_command_queue.enqueueNDRangeKernel(
-					kernel,
+					kernel.get(),
 					cl::NullRange,
 					cl::NDRange{resolution, resolution, resolution},
 					cl::NDRange{4, 4, 4},

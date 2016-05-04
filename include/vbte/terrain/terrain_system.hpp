@@ -3,11 +3,16 @@
 #include <CL/cl.hpp>
 
 #include <vbte/compute/context.hpp>
+#include <vbte/compute/kernel_manager.hpp>
 #include <vbte/graphics/program.hpp>
 #include <vbte/graphics/vertex_layout.hpp>
 #include <vbte/terrain/volume_data_manager.hpp>
 
 namespace vbte {
+	namespace compute {
+		class kernel;
+	}
+
 	namespace core {
 		class engine;
 	}
@@ -27,6 +32,8 @@ namespace vbte {
 			graphics::vertex_layout transform_feedback_layout_;
 			graphics::program marching_cubes_program_;
 			compute::context context_;
+			compute::kernel_manager kernel_manager_;
+			std::shared_ptr<compute::kernel> marching_cubes_kernel_;
 
 		public:
 			terrain_system(core::engine& engine);
@@ -58,6 +65,14 @@ namespace vbte {
 
 			auto& compute_context() noexcept {
 				return context_;
+			}
+
+			auto& kernel_manager() noexcept {
+				return kernel_manager_;
+			}
+
+			auto& marching_cubes_kernel() noexcept {
+				return *marching_cubes_kernel_;
 			}
 
 		private:

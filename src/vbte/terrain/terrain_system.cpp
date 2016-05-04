@@ -13,8 +13,12 @@
 
 namespace vbte {
 	namespace terrain {
-		terrain_system::terrain_system(core::engine& engine)
-		: engine_{engine}, volume_data_manager_{engine}, context_{true} {
+		terrain_system::terrain_system(core::engine& engine) : engine_{engine},
+																													 volume_data_manager_{engine},
+																													 context_{true},
+																													 kernel_manager_{engine_, *this} {
+			marching_cubes_kernel_ = kernel_manager_.load("opencl/marching_cubes_kernel.cl", "marching_cubes");
+
 			init_transform_feedback_layout();
 			init_volume_data_layout();
 
