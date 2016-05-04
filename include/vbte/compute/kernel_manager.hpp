@@ -18,14 +18,14 @@ namespace vbte {
 
 namespace vbte {
 	namespace compute {
-		using kernel_ptr = std::shared_ptr<const kernel>;
+		using kernel_ptr = std::shared_ptr<kernel>;
 
-		class kernel_manager : public utils::cached_resource_manager<const kernel, kernel_manager> {
+		class kernel_manager : public utils::cached_resource_manager<kernel, kernel_manager> {
 		private:
 			core::engine& engine_;
 			terrain::terrain_system& terrain_system_;
 
-			friend class utils::cached_resource_manager<const kernel, kernel_manager>;
+			friend class utils::cached_resource_manager<kernel, kernel_manager>;
 
 		public:
 			kernel_manager(core::engine& engine, terrain::terrain_system& terrain_system) noexcept;

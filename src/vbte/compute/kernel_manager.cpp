@@ -16,7 +16,7 @@ namespace vbte {
 				return nullptr;
 			}
 			auto source_ptr = std::string(asset->content().begin(), asset->content().end());
-			return std::make_shared<const kernel>(terrain_system_.compute_context(), kernel_name, source_ptr);
+			return std::make_shared<kernel>(terrain_system_.compute_context(), kernel_name, source_ptr);
 		}
 	}
 }
