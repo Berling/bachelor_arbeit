@@ -44,9 +44,9 @@ namespace vbte {
 
 		std::vector<rendering::basic_vertex> terrain_cell::marching_cubes(const terrain::volume_data& grid, size_t resolution) {
 			try {
-				auto& terrain_system = engine_.terrain_system();
-				auto& default_context = terrain_system.default_context();
-				auto& default_device = terrain_system.default_device();
+				auto& compute_context = engine_.terrain_system().compute_context();
+				auto& default_context = compute_context.get();
+				auto& default_device = compute_context.device();
 
 				auto source_file = engine_.asset_manager().load("opencl/marching_cubes_kernel.cl");
 				if (!source_file) {
@@ -71,7 +71,7 @@ namespace vbte {
 				auto vertex_count = 0;
 				auto vertex_counter = cl::Buffer{default_context, CL_MEM_READ_WRITE, sizeof(int)};
 
-				auto& default_command_queue = terrain_system.default_command_queue();
+				auto& default_command_queue = compute_context.command_queue();
 				default_command_queue.enqueueWriteBuffer(volume, CL_TRUE, 0, grid.grid().size() * sizeof(float), grid.grid().data());
 				default_command_queue.enqueueWriteBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
 
