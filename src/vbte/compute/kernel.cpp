@@ -2,8 +2,12 @@
 #define __CL_ENABLE_EXCEPTIONS
 #endif
 
+#include <GL/glew.h>
+
+#include <vbte/compute/buffer.hpp>
 #include <vbte/compute/context.hpp>
 #include <vbte/compute/kernel.hpp>
+#include <vbte/compute/shared_buffer.hpp>
 #include <vbte/utils/logger.hpp>
 
 namespace vbte {
@@ -26,6 +30,16 @@ namespace vbte {
 				}
 				utils::log(utils::log_level::fatal) << ex.what() << "(" << ex.err() << ")" << std::endl;
 			}
+		}
+
+		template <>
+		void kernel::arg<compute::buffer>(size_t index, const compute::buffer& argument) {
+			kernel_.setArg(index, argument.get());
+		}
+
+		template <>
+		void kernel::arg<compute::shared_buffer>(size_t index, const compute::shared_buffer& argument) {
+			kernel_.setArg(index, argument.get());
 		}
 	}
 }

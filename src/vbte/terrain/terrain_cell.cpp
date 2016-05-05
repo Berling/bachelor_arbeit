@@ -6,10 +6,13 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <GL/glew.h>
+
 #include <glm/gtx/string_cast.hpp>
 
 #include <vbte/asset/asset.hpp>
 #include <vbte/asset/asset_manager.hpp>
+#include <vbte/compute/buffer.hpp>
 #include <vbte/core/engine.hpp>
 #include <vbte/graphics/transform_feedback_buffer.hpp>
 #include <vbte/graphics/vertex_layout.hpp>
@@ -48,15 +51,14 @@ namespace vbte {
 				auto& default_context = compute_context.get();
 				auto& default_device = compute_context.device();
 
-				auto volume = cl::Buffer{default_context, CL_MEM_READ_ONLY, grid.grid().size() * sizeof(float)};
+				auto volume = compute::buffer{compute_context, CL_MEM_READ_ONLY, grid.grid().size() * sizeof(float)};
 				auto estimated_vertex_count = estimate_vertex_count(grid, resolution);
-				auto vertex_buffer = cl::Buffer{default_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex)};
+				auto vertex_buffer = compute::buffer{compute_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex)};
 				auto vertex_count = 0;
-				auto vertex_counter = cl::Buffer{default_context, CL_MEM_READ_WRITE, sizeof(int)};
+				auto vertex_counter = compute::buffer{compute_context, CL_MEM_READ_WRITE, sizeof(int)};
 
-				auto& default_command_queue = compute_context.command_queue();
-				default_command_queue.enqueueWriteBuffer(volume, CL_TRUE, 0, grid.grid().size() * sizeof(float), grid.grid().data());
-				default_command_queue.enqueueWriteBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
+				compute_context.enqueue_write_buffer(volume, false, grid.grid().size() * sizeof(float), grid.grid().data());
+				compute_context.enqueue_write_buffer(vertex_counter, false, sizeof(int), &vertex_count);
 
 				auto& kernel = engine_.terrain_system().marching_cubes_kernel();
 
@@ -66,19 +68,11 @@ namespace vbte {
 				kernel.arg(3, grid.grid_length());
 				kernel.arg(4, vertex_buffer);
 				kernel.arg(5, vertex_counter);
-				cl::Event event;
-				default_command_queue.enqueueNDRangeKernel(
-					kernel.get(),
-					cl::NullRange,
-					cl::NDRange{resolution, resolution, resolution},
-					cl::NDRange{4, 4, 4},
-					nullptr,
-					&event
-				);
+				auto event = compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
 				std::vector<rendering::basic_vertex> vertices;
 				vertices.assign(estimated_vertex_count, rendering::basic_vertex{glm::vec4{0.f}, glm::vec4{0.f}});
-				default_command_queue.enqueueReadBuffer(vertex_buffer, CL_TRUE, 0, estimated_vertex_count * sizeof(rendering::basic_vertex), vertices.data());
-				default_command_queue.enqueueReadBuffer(vertex_counter, CL_TRUE, 0, sizeof(int), &vertex_count);
+				compute_context.enqueue_read_buffer(vertex_buffer, false, estimated_vertex_count * sizeof(rendering::basic_vertex), vertices.data());
+				compute_context.enqueue_read_buffer(vertex_counter, false, sizeof(int), &vertex_count);
 				event.wait();
 
 				vertices.resize(vertex_count);

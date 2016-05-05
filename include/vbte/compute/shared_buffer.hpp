@@ -27,6 +27,14 @@ namespace vbte {
 
 			shared_buffer(shared_buffer&&) = default;
 			shared_buffer& operator=(shared_buffer&&) = default;
+
+			auto& get() noexcept {
+				return *shared_buffer_;
+			}
+
+			auto& get() const noexcept {
+				return *shared_buffer_;
+			}
 		};
 	}
 }
