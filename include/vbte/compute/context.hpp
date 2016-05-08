@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CL/cl.hpp>
+#include <GL/glew.h>
 
 namespace vbte {
 	namespace compute {
@@ -44,6 +45,14 @@ namespace vbte {
 
 			auto& command_queue() noexcept {
 				return command_queue_;
+			}
+
+			void begin() const noexcept {
+				glFinish();
+			}
+
+			void end() const noexcept {
+				command_queue_.finish();
 			}
 		};
 	}
