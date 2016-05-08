@@ -51,6 +51,7 @@ namespace vbte {
 			engine& operator=(engine&&) = delete;
 
 			void update(float delta_time);
+			void update_input(float delta_time);
 			void run();
 
 			void quit() noexcept {

@@ -68,6 +68,12 @@ namespace vbte {
 			//rendering_system_->draw(&t2);
 			//rendering_system_->draw(&sphere);
 
+			graphics_system_->begin();
+			rendering_system_->update(delta_time);
+			graphics_system_->end(delta_time);
+		}
+
+		void engine::update_input(float delta_time) {
 			const Uint8* state = nullptr;
 			state = SDL_GetKeyboardState(nullptr);
 
@@ -116,10 +122,6 @@ namespace vbte {
 			SDL_WarpMouseInWindow(window.get(), width / 2.f, height / 2.f);
 
 			camera_->update(delta_time);
-
-			graphics_system_->begin();
-			rendering_system_->update(delta_time);
-			graphics_system_->end(delta_time);
 		}
 
 		void engine::run() {
@@ -155,6 +157,7 @@ namespace vbte {
 				current_time = static_cast<float>(SDL_GetTicks()) / 1000.f;
 				delta_time = current_time - last_time;
 
+				update_input(delta_time);
 				update(delta_time);
 			}
 		}
