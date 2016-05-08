@@ -5,6 +5,7 @@
 
 #include <glm/glm.hpp>
 
+#include <vbte/compute/buffer.hpp>
 #include <vbte/graphics/buffer.hpp>
 #include <vbte/graphics/vertex_array.hpp>
 #include <vbte/rendering/basic_vertex.hpp>
@@ -28,6 +29,10 @@ namespace vbte {
 			graphics::vertex_array vao_;
 			graphics::vertex_buffer vbo_;
 			size_t index_count_;
+			std::unique_ptr<compute::buffer> volume_buffer_;
+			std::unique_ptr<compute::buffer> vertex_buffer_;
+			std::unique_ptr<compute::buffer> vertex_count_buffer_;
+			int vertex_count_;
 
 		public:
 			terrain_cell(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
