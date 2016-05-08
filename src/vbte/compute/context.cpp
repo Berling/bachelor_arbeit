@@ -8,7 +8,7 @@
 #ifdef LINUX
 	#include <GL/glx.h>
 #elif WINDOWS
-	#include <GL/wgl.h>
+	#include <GL/wglext.h>
 #endif
 
 #include <vbte/compute/buffer.hpp>

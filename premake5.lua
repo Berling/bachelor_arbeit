@@ -25,8 +25,12 @@ workspace "bachelor_arbeit"
 
 	configuration {"gmake", "windows"}
 		libdirs {
-			"lib/sdl2/x86_64-w64-mingw32/lib",
-			"lib/sdl2_mixer/x86_64-w64-mingw32/lib"
+			"lib/x64/"
+		}
+
+		includedirs {
+			"lib/include",
+			"$(CUDA_PATH)/include"
 		}
 
 	project "vbte"
@@ -58,6 +62,13 @@ workspace "bachelor_arbeit"
 
 		configuration {"gmake", "linux" }
 			links {"GL", "GLEW", "SDL2", "tbb", "OpenCL"}
+
+		configuration {"gmake", "windows"}
+			links {"mingw32", "imagehlp", "SDL2main", "SDL2", "glew32s", "opengl32", "opencl"}
+
+			postbuildcommands {
+				"copy \"lib\\x64\\SDL2.dll\" \"build\""
+			}
 
 		project "vtdg"
 			kind "ConsoleApp"
