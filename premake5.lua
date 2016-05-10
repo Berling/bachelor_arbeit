@@ -25,12 +25,14 @@ workspace "bachelor_arbeit"
 
 	configuration {"gmake", "windows"}
 		libdirs {
-			"lib/x64/"
+			"lib/x64/",
+			"$(AMDAPPSDKROOT)/lib/x86_64"
 		}
 
 		includedirs {
 			"lib/include",
-			"$(CUDA_PATH)/include"
+			"$(CUDA_PATH)/include",
+			"$(AMDAPPSDKROOT)/include"
 		}
 
 	project "vbte"

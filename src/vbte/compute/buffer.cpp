@@ -1,3 +1,5 @@
+#include <GL/glew.h>
+
 #include <vbte/compute/buffer.hpp>
 
 namespace vbte {
