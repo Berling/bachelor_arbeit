@@ -9,6 +9,7 @@
 #include <vbte/graphics/graphics_system.hpp>
 #include <vbte/rendering/cube.hpp>
 #include <vbte/rendering/rendering_system.hpp>
+#include <vbte/rendering/skydome.hpp>
 #include <vbte/terrain/terrain_cell.hpp>
 #include <vbte/terrain/terrain_system.hpp>
 #include <vbte/terrain/volume_data.hpp>
@@ -62,6 +63,7 @@ namespace vbte {
 			//static terrain::terrain_cell sphere{*this, glm::vec3{0.f, -2.5f, 0.f}, glm::angleAxis(glm::radians(0.f), glm::vec3{0.f}), "terrain/sphere.vol"};
 			//rendering_system_->draw(&c);
 			//rendering_system_->draw(&c1);
+			static rendering::skydome s{*this, glm::vec3{0.f}, 500.f};
 			rendering_system_->draw(&t);
 			rendering_system_->draw_bounding_box(glm::vec3{t.volume_data().grid_length() / 2.f}, glm::vec3{t.volume_data().grid_length() / 2.f}, glm::angleAxis(0.f, glm::vec3{0.f}));
 			//rendering_system_->draw(&t2);
@@ -69,6 +71,7 @@ namespace vbte {
 
 			graphics_system_->begin();
 			rendering_system_->update(delta_time);
+			s.draw();
 			graphics_system_->end(delta_time);
 		}
 

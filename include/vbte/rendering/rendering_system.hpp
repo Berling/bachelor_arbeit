@@ -45,6 +45,8 @@ namespace vbte {
 			graphics::program light_program_;
 			std::vector<drawable*> draw_queue_;
 			std::vector<bounding_box_uniforms> bounding_box_draw_queue_;
+			graphics::program skydome_program_;
+			graphics::vertex_layout layout_;
 
 		public:
 			rendering_system(core::engine& engine);
@@ -62,8 +64,16 @@ namespace vbte {
 				return basic_layout_;
 			}
 
+			auto& layout() noexcept {
+				return layout_;
+			}
+
 			void change_mode(rendering_mode mode) noexcept {
 				mode_ = mode;
+			}
+
+			auto& skydome_program() noexcept {
+				return skydome_program_;
 			}
 
 			void draw(drawable* geometry);

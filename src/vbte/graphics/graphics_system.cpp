@@ -14,7 +14,7 @@
 namespace vbte {
 	namespace graphics {
 		graphics_system::graphics_system(core::engine& engine)
-		: engine_(engine), context_(nullptr), clear_color_(glm::vec4(0.f)),
+		: engine_(engine), context_(nullptr), clear_color_(glm::vec4(0.47f, 0.62f, 0.64f, 1.f)),
 		shader_manager_(std::make_unique<graphics::shader_manager>(engine_)),
 		texture_manager_(std::make_unique<graphics::texture_manager>(engine_)) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);

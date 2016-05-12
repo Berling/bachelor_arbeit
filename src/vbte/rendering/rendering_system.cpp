@@ -11,6 +11,7 @@
 #include <vbte/rendering/cube.hpp>
 #include <vbte/rendering/drawable.hpp>
 #include <vbte/rendering/rendering_system.hpp>
+#include <vbte/rendering/vertex.hpp>
 
 namespace vbte {
 	namespace rendering {
@@ -19,6 +20,10 @@ namespace vbte {
 		mode_{rendering_mode::shaded} {
 			basic_layout_.emplace_back("_position", 4, GL_FLOAT, false, sizeof(basic_vertex), offsetof(basic_vertex, position));
 			basic_layout_.emplace_back("_normal", 4, GL_FLOAT, false, sizeof(basic_vertex), offsetof(basic_vertex, normal));
+
+			layout_.emplace_back("_position", 4, GL_FLOAT, false, sizeof(vertex), offsetof(vertex, position));
+			layout_.emplace_back("_texcoord", 2, GL_FLOAT, false, sizeof(vertex), offsetof(vertex, texcoord));
+			layout_.emplace_back("_normal", 4, GL_FLOAT, false, sizeof(vertex), offsetof(vertex, normal));
 
 			auto& shader_manager = engine_.graphics_system().shader_manager();
 
@@ -47,6 +52,19 @@ namespace vbte {
 			light_program_.attach_shader(fragment_shader);
 			basic_layout_.setup_program(light_program_, "frag_color");
 			light_program_.link();
+
+			vertex_shader = shader_manager.load("shaders/skydome.vert", GL_VERTEX_SHADER);
+			if (!vertex_shader) {
+				throw std::runtime_error{"could not load shaders/skydome.vert"};
+			}
+			skydome_program_.attach_shader(vertex_shader);
+			fragment_shader = shader_manager.load("shaders/skydome.frag", GL_FRAGMENT_SHADER);
+			if (!fragment_shader) {
+				throw std::runtime_error{"could not load shaders/skydome.frag"};
+			}
+			skydome_program_.attach_shader(fragment_shader);
+			layout_.setup_program(skydome_program_, "frag_color");
+			skydome_program_.link();
 		}
 
 		rendering_system::~rendering_system() noexcept {
@@ -170,7 +188,7 @@ namespace vbte {
 				bb.draw();
 			}
 
-			glDisable(GL_DEPTH_TEST);
+			//glDisable(GL_DEPTH_TEST);
 
 			draw_queue_.clear();
 			bounding_box_draw_queue_.clear();
