@@ -63,7 +63,11 @@ workspace "bachelor_arbeit"
 		files "src/vbte/**.cpp"
 
 		configuration {"gmake", "linux" }
-			links {"GL", "GLEW", "SDL2", "tbb", "OpenCL"}
+			libdirs {
+				"$(AMDAPPSDKROOT)/lib/x86_64/sdk"
+			}
+
+			links {"GL", "GLEW", "SDL2", "OpenCL"}
 
 		configuration {"gmake", "windows"}
 			links {"mingw32", "imagehlp", "SDL2main", "SDL2", "glew32s", "opengl32", "opencl"}

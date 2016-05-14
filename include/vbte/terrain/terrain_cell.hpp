@@ -31,7 +31,7 @@ namespace vbte {
 			graphics::vertex_buffer vbo_;
 			size_t index_count_;
 			std::unique_ptr<compute::buffer> volume_buffer_;
-			std::unique_ptr<compute::shared_buffer> vertex_buffer_;
+			std::unique_ptr<compute::buffer> vertex_buffer_;
 			std::unique_ptr<compute::buffer> vertex_count_buffer_;
 			int vertex_count_;
 
@@ -47,7 +47,7 @@ namespace vbte {
 			}
 
 		private:
-			void marching_cubes(const terrain::volume_data& grid, size_t resolution);
+			std::vector<rendering::basic_vertex> marching_cubes(const terrain::volume_data& grid, size_t resolution);
 		};
 	}
 }

@@ -35,12 +35,13 @@ namespace vbte {
 			auto& compute_context = engine_.terrain_system().compute_context();
 			volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
 			auto estimated_vertex_count = estimate_vertex_count(*volume_data_, volume_data_->resolution());
-			vertex_buffer_ = std::make_unique<compute::shared_buffer>(compute_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex), nullptr, GL_DYNAMIC_DRAW);
+			vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex));
 			vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
 
-			this->marching_cubes(*volume_data_, volume_data_->resolution());
+			auto vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
+			vbo_.data(vertices.size() * sizeof(rendering::basic_vertex), vertices.data());
 
-			engine_.rendering_system().basic_layout().setup_layout(vao_, vertex_buffer_.get());
+			engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
 		}
 
 		void terrain_cell::draw() const {
@@ -52,14 +53,11 @@ namespace vbte {
 			this->marching_cubes(*volume_data_, volume_data_->resolution());
 		}
 
-		void terrain_cell::marching_cubes(const terrain::volume_data& grid, size_t resolution) {
+		std::vector<rendering::basic_vertex> terrain_cell::marching_cubes(const terrain::volume_data& grid, size_t resolution) {
 			auto& compute_context = engine_.terrain_system().compute_context();
 
-			auto estimated_vertex_count = 744;//estimate_vertex_count(grid, resolution);
+			auto estimated_vertex_count = estimate_vertex_count(grid, resolution);
 			auto vertex_count = 0;
-
-			compute_context.begin();
-			compute_context.enqueue_acquire_gl_buffer(*vertex_buffer_);
 
 			compute_context.enqueue_write_buffer(*volume_buffer_, false, grid.grid().size() * sizeof(float), grid.grid().data());
 			compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
@@ -73,13 +71,14 @@ namespace vbte {
 			kernel.arg(4, *vertex_buffer_);
 			kernel.arg(5, *vertex_count_buffer_);
 			auto event = compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
+			std::vector<rendering::basic_vertex> vertices;
+			vertices.resize(estimated_vertex_count);
+			compute_context.enqueue_read_buffer(*vertex_buffer_, false, estimated_vertex_count * sizeof(rendering::basic_vertex), vertices.data());
 			compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
 			event.wait();
 
-			compute_context.end();
-			compute_context.enqueue_release_gl_buffer(*vertex_buffer_);
-
 			vertex_count_ = vertex_count;
+			return vertices;
 		}
 	}
 }
