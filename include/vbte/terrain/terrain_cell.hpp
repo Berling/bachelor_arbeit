@@ -19,6 +19,7 @@ namespace vbte {
 
 	namespace terrain {
 		class volume_data;
+		class terrain_system;
 	}
 }
 
@@ -26,6 +27,7 @@ namespace vbte {
 	namespace terrain {
 		class terrain_cell : public rendering::drawable {
 		private:
+			terrain_system& terrain_system_;
 			std::shared_ptr<const terrain::volume_data> volume_data_;
 			graphics::vertex_array vao_;
 			graphics::vertex_buffer vbo_;
@@ -34,9 +36,10 @@ namespace vbte {
 			std::unique_ptr<compute::buffer> vertex_buffer_;
 			std::unique_ptr<compute::buffer> vertex_count_buffer_;
 			int vertex_count_;
+			bool empty_;
 
 		public:
-			terrain_cell(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
+			terrain_cell(core::engine& engine, terrain_system& terrain_system, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
 			~terrain_cell() = default;
 
 			void draw() const override;
@@ -44,6 +47,10 @@ namespace vbte {
 
 			auto& volume_data() const noexcept {
 				return *volume_data_;
+			}
+
+			auto is_empty() const noexcept {
+				return empty_;
 			}
 
 		private:

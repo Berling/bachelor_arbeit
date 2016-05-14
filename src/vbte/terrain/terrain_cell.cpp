@@ -25,23 +25,32 @@
 
 namespace vbte {
 	namespace terrain {
-		terrain_cell::terrain_cell(core::engine& engine, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name) :
-		rendering::drawable{engine, position, rotation}, vbo_{GL_DYNAMIC_DRAW}, vertex_count_{0} {
-			volume_data_ = engine_.terrain_system().volume_data_manager().load(file_name);
+		terrain_cell::terrain_cell(core::engine& engine, terrain_system& terrain_system, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name) :
+		rendering::drawable{engine, position, rotation}, terrain_system_{terrain_system}, vbo_{GL_DYNAMIC_DRAW}, vertex_count_{0}, empty_{false} {
+			volume_data_ = terrain_system_.volume_data_manager().load(file_name);
 			if (!volume_data_) {
 				throw std::runtime_error{"could not load file " + file_name};
 			}
 
-			auto& compute_context = engine_.terrain_system().compute_context();
-			volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
 			auto estimated_vertex_count = estimate_vertex_count(*volume_data_, volume_data_->resolution());
-			vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex));
-			vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
+			if (estimated_vertex_count == 0) {
+				empty_ = true;
+			}
 
-			auto vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
-			vbo_.data(vertices.size() * sizeof(rendering::basic_vertex), vertices.data());
+			if (!empty_) {
+				auto& compute_context = terrain_system_.compute_context();
+				utils::log << "voxel count: " << volume_data_->grid().size() << std::endl;
+				volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
+				utils::log << "resolution: " << volume_data_->resolution() << std::endl;
+				utils::log << "estimated_vertex_count: " << estimated_vertex_count << std::endl;
+				vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex));
+				vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
 
-			engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
+				auto vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
+				vbo_.data(vertices.size() * sizeof(rendering::basic_vertex), vertices.data());
+
+				engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
+			}
 		}
 
 		void terrain_cell::draw() const {
@@ -54,7 +63,7 @@ namespace vbte {
 		}
 
 		std::vector<rendering::basic_vertex> terrain_cell::marching_cubes(const terrain::volume_data& grid, size_t resolution) {
-			auto& compute_context = engine_.terrain_system().compute_context();
+			auto& compute_context = terrain_system_.compute_context();
 
 			auto estimated_vertex_count = estimate_vertex_count(grid, resolution);
 			auto vertex_count = 0;
@@ -62,7 +71,7 @@ namespace vbte {
 			compute_context.enqueue_write_buffer(*volume_buffer_, false, grid.grid().size() * sizeof(float), grid.grid().data());
 			compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
 
-			auto& kernel = engine_.terrain_system().marching_cubes_kernel();
+			auto& kernel = terrain_system_.marching_cubes_kernel();
 
 			kernel.arg(0, *volume_buffer_);
 			kernel.arg(1, static_cast<uint32_t>(grid.resolution()));

@@ -11,13 +11,13 @@ namespace vtdg {
 		grid_.assign(actual_resolution * actual_resolution * actual_resolution, 0.f);
 	}
 
-	void uniform_grid::fill(const std::function<float(const glm::vec3&)>& f) {
+	void uniform_grid::fill(const std::function<float(const glm::vec3&)>& f, const glm::vec3& offset) {
 		auto actual_resolution = resolution_ + 1;
 
 		for (auto x = 0; x <= resolution_; ++x) {
 			for (auto y = 0; y <= resolution_; ++y) {
 				for (auto z = 0; z <= resolution_; ++z) {
-					grid_[z + actual_resolution * (y + actual_resolution * x)] = f(glm::vec3{x * sample_rate_, y * sample_rate_, z * sample_rate_});
+					grid_[z + actual_resolution * (y + actual_resolution * x)] = f(glm::vec3{x * sample_rate_, y * sample_rate_, z * sample_rate_} + offset);
 				}
 			}
 		}

@@ -31,7 +31,7 @@ namespace vtdg {
 		uniform_grid(uniform_grid&&) = default;
 		uniform_grid& operator=(uniform_grid&&) = default;
 
-		void fill(const std::function<float(const glm::vec3&)>& f);
+		void fill(const std::function<float(const glm::vec3&)>& f, const glm::vec3& offset = glm::vec3{0.f});
 		void serialize(const std::string& file_path);
 		float value(size_t x, size_t y, size_t z);
 	};

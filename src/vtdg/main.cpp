@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 	};
 
 	auto terrain = [&](const glm::vec3& p) {
-		static auto zero = grid_length / 3.f;
+		static auto zero = (grid_length / grid_resolution) / 3.f;
 		auto noise1 = noise(p * 4.03f) * 0.025f;
 		auto noise2 = noise(p * 1.96f) * 0.05f;
 		auto noise3 = noise(p * 1.01f) * 0.01f;
@@ -51,11 +51,20 @@ int main(int argc, char* argv[]) {
 	} else if (sampling_function == "plane") {
 		grid.fill(plane);
 	} else if (sampling_function == "terrain") {
-		grid.fill(terrain);
+		for (auto x = 0; x < grid_resolution; ++x) {
+			for (auto y = 0; y < grid_resolution; ++y) {
+				auto cell_length = grid_length / grid_resolution;
+				auto x_offset = x * cell_length;
+				auto y_offset = y * cell_length;
+				vtdg::uniform_grid cell{cell_length, 64};
+				cell.fill(terrain, glm::vec3{x_offset, 0.f, y_offset});
+				cell.serialize(argv[4] + std::to_string(x) + "_" + std::to_string(y) + std::string{".vol"});
+			}
+		}
 	} else {
 		throw std::runtime_error{"no sampling function named " + sampling_function};
 	}
-	grid.serialize(argv[4]);
+	//grid.serialize(argv[4]);
 
 	return 0;
 }

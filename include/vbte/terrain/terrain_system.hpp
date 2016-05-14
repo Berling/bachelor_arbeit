@@ -20,6 +20,10 @@ namespace vbte {
 	namespace graphics {
 		class shader_manager;
 	}
+
+	namespace terrain {
+		class terrain_cell;
+	}
 }
 
 namespace vbte {
@@ -34,6 +38,7 @@ namespace vbte {
 			compute::context context_;
 			compute::kernel_manager kernel_manager_;
 			std::shared_ptr<compute::kernel> marching_cubes_kernel_;
+			std::vector<std::unique_ptr<terrain_cell>> terrain_;
 
 		public:
 			terrain_system(core::engine& engine);
