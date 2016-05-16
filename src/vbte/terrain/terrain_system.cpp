@@ -9,6 +9,7 @@
 #include <vbte/graphics/shader.hpp>
 #include <vbte/graphics/shader_manager.hpp>
 #include <vbte/rendering/rendering_system.hpp>
+#include <vbte/terrain/terrain.hpp>
 #include <vbte/terrain/terrain_cell.hpp>
 #include <vbte/terrain/terrain_system.hpp>
 #include <vbte/terrain/volume_data.hpp>
@@ -28,28 +29,11 @@ namespace vbte {
 			auto& shader_manager = engine_.graphics_system().shader_manager();
 			init_marching_cubes_program(shader_manager);
 
-			auto terrain_length = 100.f;
-			auto subdivisions = 5;
-			for (auto x = 0; x < subdivisions; ++x) {
-				for (auto y = 0; y < subdivisions; ++y) {
-					auto cell_length = terrain_length / subdivisions;
-					auto x_offset = x * cell_length;
-					auto y_offset = y * cell_length;
-					auto path = "terrain/" + std::to_string(x) + "_" + std::to_string(y) + ".vol";
-					utils::log << path << std::endl;
-					terrain_.emplace_back(std::make_unique<terrain_cell>(engine_, *this, glm::vec3{x_offset, 0.f, y_offset}, glm::angleAxis(0.f, glm::vec3{0.f}), path));
-				}
-			}
+			terrain_ = std::make_unique<class terrain>(engine_, *this, "terrain/test.ter");
 		}
 
 		void terrain_system::update(float delta_time) {
-			auto& rendering_system = engine_.rendering_system();
-			for (auto& tc : terrain_) {
-				if (!tc->is_empty()) {
-					rendering_system.draw(tc.get());
-				}
-				rendering_system.draw_bounding_box(glm::vec3{tc->volume_data().grid_length() / 2.f}, tc->position() + glm::vec3{tc->volume_data().grid_length() / 2.f}, glm::angleAxis(0.f, glm::vec3{0.f}));
-			}
+			terrain_->draw();
 		}
 
 		void terrain_system::init_marching_cubes_program(graphics::shader_manager& shader_manager) {

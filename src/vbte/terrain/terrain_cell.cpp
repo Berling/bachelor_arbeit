@@ -62,7 +62,7 @@ namespace vbte {
 			this->marching_cubes(*volume_data_, volume_data_->resolution());
 		}
 
-		std::vector<rendering::basic_vertex> terrain_cell::marching_cubes(const terrain::volume_data& grid, size_t resolution) {
+		std::vector<rendering::basic_vertex> terrain_cell::marching_cubes(const class volume_data& grid, size_t resolution) {
 			auto& compute_context = terrain_system_.compute_context();
 
 			auto estimated_vertex_count = estimate_vertex_count(grid, resolution);

@@ -22,6 +22,7 @@ namespace vbte {
 	}
 
 	namespace terrain {
+		class terrain;
 		class terrain_cell;
 	}
 }
@@ -31,14 +32,14 @@ namespace vbte {
 		class terrain_system {
 		private:
 			core::engine& engine_;
-			terrain::volume_data_manager volume_data_manager_;
+			class volume_data_manager volume_data_manager_;
 			graphics::vertex_layout volume_data_layout_;
 			graphics::vertex_layout transform_feedback_layout_;
 			graphics::program marching_cubes_program_;
 			compute::context context_;
 			compute::kernel_manager kernel_manager_;
 			std::shared_ptr<compute::kernel> marching_cubes_kernel_;
-			std::vector<std::unique_ptr<terrain_cell>> terrain_;
+			std::unique_ptr<class terrain> terrain_; 
 
 		public:
 			terrain_system(core::engine& engine);

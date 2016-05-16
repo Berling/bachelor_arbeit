@@ -28,7 +28,7 @@ namespace vbte {
 		class terrain_cell : public rendering::drawable {
 		private:
 			terrain_system& terrain_system_;
-			std::shared_ptr<const terrain::volume_data> volume_data_;
+			std::shared_ptr<const class volume_data> volume_data_;
 			graphics::vertex_array vao_;
 			graphics::vertex_buffer vbo_;
 			size_t index_count_;
@@ -54,7 +54,7 @@ namespace vbte {
 			}
 
 		private:
-			std::vector<rendering::basic_vertex> marching_cubes(const terrain::volume_data& grid, size_t resolution);
+			std::vector<rendering::basic_vertex> marching_cubes(const class volume_data& grid, size_t resolution);
 		};
 	}
 }

@@ -1,8 +1,17 @@
 #include <string>
 #include <iostream>
+#include <fstream>
 
 #include <vtdg/perlin_noise.hpp>
 #include <vtdg/uniform_grid.hpp>
+
+struct terrain_header {
+	const uint32_t magic = 0x31495456;
+	uint32_t cell_count = 0;
+	uint64_t cell_resolution = 0;
+	float cell_length = 0.f;
+	uint64_t size = 0;
+};
 
 int main(int argc, char* argv[]) {
 	if (argc != 5) {
@@ -46,25 +55,63 @@ int main(int argc, char* argv[]) {
 	auto sampling_function = std::string{argv[3]};
 	if (sampling_function == "sphere") {
 		grid.fill(sphere);
+		grid.serialize(argv[4]);
 	} else if (sampling_function == "noise") {
 		grid.fill(noise);
+		grid.serialize(argv[4]);
 	} else if (sampling_function == "plane") {
 		grid.fill(plane);
+		grid.serialize(argv[4]);
 	} else if (sampling_function == "terrain") {
+		auto cell_length = grid_length / grid_resolution;
+		auto cell_resolution = 64;
+
+		terrain_header head;
+		head.cell_count = grid_resolution;
+		head.cell_resolution = cell_resolution;
+		head.cell_length = cell_length;
+
+		std::vector<std::string> cell_paths;
+
+		size_t size = 2 * sizeof(uint32_t) + 2 * sizeof(uint64_t) + sizeof(float);
 		for (auto x = 0; x < grid_resolution; ++x) {
 			for (auto y = 0; y < grid_resolution; ++y) {
-				auto cell_length = grid_length / grid_resolution;
 				auto x_offset = x * cell_length;
 				auto y_offset = y * cell_length;
 				vtdg::uniform_grid cell{cell_length, 64};
 				cell.fill(terrain, glm::vec3{x_offset, 0.f, y_offset});
-				cell.serialize(argv[4] + std::to_string(x) + "_" + std::to_string(y) + std::string{".vol"});
+				auto prefix = std::string{"../assets/"};
+				auto file_name = std::string{argv[4]};
+				auto path_without_prefix = "terrain/" + file_name + std::string{"_"} + std::to_string(x) + "_" + std::to_string(y) + std::string{".vol"};
+				auto path = prefix + path_without_prefix;
+				size += path_without_prefix.size() + sizeof(uint64_t);
+				cell_paths.emplace_back(path_without_prefix);
+				cell.serialize(path);
 			}
 		}
+
+		head.size = size;
+
+		auto path = std::string{"../assets/terrain/"} + argv[4] + std::string{".ter"};
+		std::ofstream os{path, std::ios_base::trunc | std::ios_base::binary};
+		if (!os.is_open()) {
+			throw std::runtime_error{"could not open output file " + path};
+		}
+
+		os.write(reinterpret_cast<const char*>(&head.magic), sizeof(uint32_t));
+		os.write(reinterpret_cast<char*>(&head.cell_count), sizeof(uint32_t));
+		os.write(reinterpret_cast<char*>(&head.cell_resolution), sizeof(uint64_t));
+		os.write(reinterpret_cast<char*>(&head.cell_length), sizeof(float));
+		os.write(reinterpret_cast<char*>(&head.size), sizeof(uint64_t));
+		for (auto& p : cell_paths) {
+			uint64_t size = p.size();
+			os.write(reinterpret_cast<char*>(&size), sizeof(uint64_t));
+			os.write(p.c_str(), size);
+		}
+
 	} else {
 		throw std::runtime_error{"no sampling function named " + sampling_function};
 	}
-	//grid.serialize(argv[4]);
 
 	return 0;
 }

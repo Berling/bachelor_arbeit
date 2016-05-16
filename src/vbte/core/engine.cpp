@@ -10,6 +10,7 @@
 #include <vbte/rendering/cube.hpp>
 #include <vbte/rendering/rendering_system.hpp>
 #include <vbte/rendering/skydome.hpp>
+#include <vbte/terrain/terrain.hpp>
 #include <vbte/terrain/terrain_cell.hpp>
 #include <vbte/terrain/terrain_system.hpp>
 #include <vbte/terrain/volume_data.hpp>
