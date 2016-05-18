@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
 	};
 
 	auto terrain = [&](const glm::vec3& p) {
-		static auto zero = (grid_length / grid_resolution) / 4.f;
+		static auto zero = (grid_length / grid_resolution);
 		auto density = (zero - p.y);
 		auto ws = p;
 
@@ -115,8 +115,8 @@ int main(int argc, char* argv[]) {
 		density += trilinear_sample(noise_texture, ws * 0.0021f) * 7.74f;
 		density += trilinear_sample(noise_texture, ws * 0.0014f) * 10.01f;
 
-		float hard_floor = 2.f;
-		density += glm::clamp((hard_floor - p.y) * 3.f, 0.f, 1.f) * 40.f;
+		//float hard_floor = 2.f;
+		//density += glm::clamp((hard_floor - p.y) * 3.f, 0.f, 1.f) * 40.f;
 
 		return density;
 	};
@@ -145,17 +145,20 @@ int main(int argc, char* argv[]) {
 		size_t size = 2 * sizeof(uint32_t) + 2 * sizeof(uint64_t) + sizeof(float);
 		for (auto x = 0; x < grid_resolution; ++x) {
 			for (auto y = 0; y < grid_resolution; ++y) {
-				auto x_offset = x * cell_length;
-				auto y_offset = y * cell_length;
-				vtdg::uniform_grid cell{cell_length, cell_resolution};
-				cell.fill(terrain, glm::vec3{x_offset, 0.f, y_offset});
-				auto prefix = std::string{"../assets/"};
-				auto file_name = std::string{argv[4]};
-				auto path_without_prefix = "terrain/" + file_name + std::string{"_"} + std::to_string(x) + "_" + std::to_string(y) + std::string{".vol"};
-				auto path = prefix + path_without_prefix;
-				size += path_without_prefix.size() + sizeof(uint64_t);
-				cell_paths.emplace_back(path_without_prefix);
-				cell.serialize(path);
+				for (auto z = 0; z < 2; ++z) {
+					auto x_offset = x * cell_length;
+					auto y_offset = y * cell_length;
+					auto z_offset = z * cell_length;
+					vtdg::uniform_grid cell{cell_length, cell_resolution};
+					cell.fill(terrain, glm::vec3{x_offset, z_offset, y_offset});
+					auto prefix = std::string{"../assets/"};
+					auto file_name = std::string{argv[4]};
+					auto path_without_prefix = "terrain/" + file_name + std::string{"_"} + std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(z) + std::string{".vol"};
+					auto path = prefix + path_without_prefix;
+					size += path_without_prefix.size() + sizeof(uint64_t);
+					cell_paths.emplace_back(path_without_prefix);
+					cell.serialize(path);
+				}
 			}
 		}
 

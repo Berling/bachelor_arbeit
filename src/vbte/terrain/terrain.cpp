@@ -46,16 +46,18 @@ namespace vbte {
 
 			for (auto x = 0; x < head.cell_count; ++x) {
 				for (auto y = 0; y < head.cell_count; ++y) {
-					auto path_size = *reinterpret_cast<const uint64_t*>(data_ptr);
-					data_ptr += sizeof(uint64_t);
-					std::string cell_path{data_ptr, path_size};
-					data_ptr += path_size;
+					for (auto z = 0; z < 2; ++z) {
+						auto path_size = *reinterpret_cast<const uint64_t*>(data_ptr);
+						data_ptr += sizeof(uint64_t);
+						std::string cell_path{data_ptr, path_size};
+						data_ptr += path_size;
 
-					cells_.emplace_back(
-						std::make_unique<terrain_cell>(
-							engine_, terrain_system_, glm::vec3{x * head.cell_length, 0.f, y * head.cell_length}, glm::angleAxis(0.f, glm::vec3{0.f}), cell_path
-						)
-					);
+						cells_.emplace_back(
+							std::make_unique<terrain_cell>(
+								engine_, terrain_system_, glm::vec3{x * head.cell_length, z * head.cell_length, y * head.cell_length}, glm::angleAxis(0.f, glm::vec3{0.f}), cell_path
+							)
+						);
+					}
 				}
 			}
 		}
