@@ -26,68 +26,99 @@
 namespace vbte {
 	namespace terrain {
 		terrain_cell::terrain_cell(core::engine& engine, terrain_system& terrain_system, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name) :
-		rendering::drawable{engine, position, rotation}, terrain_system_{terrain_system}, vbo_{GL_DYNAMIC_DRAW}, vertex_count_{0}, empty_{false} {
+		rendering::drawable{engine, position, rotation}, terrain_system_{terrain_system}, vbo_{GL_DYNAMIC_DRAW}, vbo2_{GL_DYNAMIC_DRAW}, vertex_count_{0}, empty_{false}, dirty_{false} {
 			volume_data_ = terrain_system_.volume_data_manager().load(file_name);
 			if (!volume_data_) {
 				throw std::runtime_error{"could not load file " + file_name};
 			}
 
-			auto estimated_vertex_count = estimate_vertex_count(*volume_data_, volume_data_->resolution());
-			if (estimated_vertex_count == 0) {
+			maximum_vertex_count_ = estimate_vertex_count(*volume_data_, volume_data_->resolution());
+			if (maximum_vertex_count_ == 0) {
 				empty_ = true;
 			}
 
 			if (!empty_) {
 				auto& compute_context = terrain_system_.compute_context();
-				utils::log << "voxel count: " << volume_data_->grid().size() << std::endl;
 				volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
-				utils::log << "resolution: " << volume_data_->resolution() << std::endl;
-				utils::log << "estimated_vertex_count: " << estimated_vertex_count << std::endl;
-				vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, estimated_vertex_count * sizeof(rendering::basic_vertex));
+				vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, maximum_vertex_count_ * sizeof(rendering::basic_vertex));
 				vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
 
-				auto vertices = this->marching_cubes(*volume_data_, volume_data_->resolution());
-				vbo_.data(vertices.size() * sizeof(rendering::basic_vertex), vertices.data());
+				vertices_.resize(maximum_vertex_count_);
 
 				engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
+				engine_.rendering_system().basic_layout().setup_layout(vao2_, &vbo2_);
 			}
 		}
 
 		void terrain_cell::draw() const {
-			vao_.bind();
-			glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
+			if (front_) {
+				vao_.bind();
+				glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
+			} else {
+				vao2_.bind();
+				glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
+			}
 		}
 
-		void terrain_cell::update_geometry() {
-			this->marching_cubes(*volume_data_, volume_data_->resolution());
+		void terrain_cell::update_geometry(size_t resolution) {
+			if (build_) {
+				this->marching_cubes(*volume_data_, resolution);
+				build_ = false;
+			}
+			if (!dirty_.load() && write_data_) {
+				if (initial_build_ || !front_) {
+					vbo_.data(vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
+					front_ = true;
+					initial_build_ = false;
+				} else {
+					vbo2_.data(vertex_count2_ * sizeof(rendering::basic_vertex), vertices_.data());
+					front_ = false;
+				}
+				write_data_ = false;
+			}
 		}
 
-		std::vector<rendering::basic_vertex> terrain_cell::marching_cubes(const class volume_data& grid, size_t resolution) {
-			auto& compute_context = terrain_system_.compute_context();
+		void terrain_cell::marching_cubes(const class volume_data& grid, size_t resolution) {
+			if (!is_empty() && !dirty_.load()) {
+				dirty_.store(true);
 
-			auto estimated_vertex_count = estimate_vertex_count(grid, resolution);
-			auto vertex_count = 0;
+				auto& compute_context = terrain_system_.compute_context();
 
-			compute_context.enqueue_write_buffer(*volume_buffer_, false, grid.grid().size() * sizeof(float), grid.grid().data());
-			compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
+				compute_context.enqueue_write_buffer(*volume_buffer_, false, grid.grid().size() * sizeof(float), grid.grid().data());
+				if (initial_build_ || !front_) {
+					vertex_count_ = 0;
+					compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count_);
+				} else {
+					vertex_count2_ = 0;
+					compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count2_);
+				}
 
-			auto& kernel = terrain_system_.marching_cubes_kernel();
+				auto& kernel = terrain_system_.marching_cubes_kernel();
 
-			kernel.arg(0, *volume_buffer_);
-			kernel.arg(1, static_cast<uint32_t>(grid.resolution()));
-			kernel.arg(2, static_cast<uint32_t>(resolution));
-			kernel.arg(3, grid.grid_length());
-			kernel.arg(4, *vertex_buffer_);
-			kernel.arg(5, *vertex_count_buffer_);
-			auto event = compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
-			std::vector<rendering::basic_vertex> vertices;
-			vertices.resize(estimated_vertex_count);
-			compute_context.enqueue_read_buffer(*vertex_buffer_, false, estimated_vertex_count * sizeof(rendering::basic_vertex), vertices.data());
-			compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
-			event.wait();
+				kernel.arg(0, *volume_buffer_);
+				kernel.arg(1, static_cast<uint32_t>(grid.resolution()));
+				kernel.arg(2, static_cast<uint32_t>(resolution));
+				kernel.arg(3, grid.grid_length());
+				kernel.arg(4, *vertex_buffer_);
+				kernel.arg(5, *vertex_count_buffer_);
+				auto event = compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
+				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 
-			vertex_count_ = vertex_count;
-			return vertices;
+				if (initial_build_ || !front_) {
+					compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count_);
+				} else {
+					compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count2_);
+				}
+
+				auto result = event.setCallback(
+					CL_COMPLETE,
+					+[](cl_event event, cl_int command_exec_status, void* user_data) {
+						reinterpret_cast<class terrain_cell*>(user_data)->dirty_.store(false);
+					},
+					this
+				);
+				write_data_ = true;
+			}
 		}
 	}
 }

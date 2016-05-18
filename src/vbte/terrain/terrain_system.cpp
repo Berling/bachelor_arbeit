@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 
+#include <vbte/core/camera.hpp>
 #include <vbte/core/engine.hpp>
 #include <vbte/graphics/graphics_system.hpp>
 #include <vbte/graphics/shader.hpp>
@@ -33,6 +34,8 @@ namespace vbte {
 		}
 
 		void terrain_system::update(float delta_time) {
+			auto& camera = engine_.camera();
+			terrain_->update_lod_levels(camera.position());
 			terrain_->draw();
 		}
 

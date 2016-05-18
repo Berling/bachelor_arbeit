@@ -72,5 +72,23 @@ namespace vbte {
 				rendering_system.draw_bounding_box(glm::vec3{cell->volume_data().grid_length() / 2.f}, cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f}, glm::angleAxis(0.f, glm::vec3{0.f}));
 			}
 		}
+
+		void terrain::update_lod_levels(const glm::vec3& position) {
+			auto magic_distance = 2000.f;
+			auto magic_distance2 = 5000.f;
+			for (auto& cell : cells_) {
+				auto resolution = cell->volume_data().resolution();
+				if (glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length()}) - position) < magic_distance) {
+					cell->lod_level(0);
+					cell->update_geometry(resolution);
+				} else if(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length()}) - position) < magic_distance2) {
+					cell->lod_level(1);
+					cell->update_geometry(resolution / 2);
+				} else {
+					cell->lod_level(2);
+					cell->update_geometry(resolution / 4);
+				}
+			}
+		}
 	}
 }
