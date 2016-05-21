@@ -82,6 +82,8 @@ namespace vbte {
 				return current_lod_level_;
 			}
 
+			void draw_normals() const override;
+
 		private:
 			void marching_cubes(const class volume_data& grid, size_t resolution);
 		};

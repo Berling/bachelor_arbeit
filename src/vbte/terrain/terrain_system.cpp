@@ -30,6 +30,24 @@ namespace vbte {
 			auto& shader_manager = engine_.graphics_system().shader_manager();
 			init_marching_cubes_program(shader_manager);
 
+			auto vertex_shader = shader_manager.load("shaders/normal.vert", GL_VERTEX_SHADER);
+			if (!vertex_shader) {
+				throw std::runtime_error("could not load shaders/normal.vert");
+			}
+			normal_program_.attach_shader(vertex_shader);
+			auto geometry_shader = shader_manager.load("shaders/normal.geom", GL_GEOMETRY_SHADER);
+			if (!geometry_shader) {
+				throw std::runtime_error("could not load shaders/normal.geom");
+			}
+			normal_program_.attach_shader(geometry_shader);
+			auto fragment_shader = shader_manager.load("shaders/normal.frag", GL_FRAGMENT_SHADER);
+			if (!fragment_shader) {
+				throw std::runtime_error("could not load shaders/normal.frag");
+			}
+			normal_program_.attach_shader(fragment_shader);
+			engine_.rendering_system().basic_layout().setup_program(normal_program_, "frag_color");
+			normal_program_.link();
+
 			terrain_ = std::make_unique<class terrain>(engine_, *this, "terrain/test.ter");
 		}
 

@@ -39,7 +39,8 @@ namespace vbte {
 			compute::context context_;
 			compute::kernel_manager kernel_manager_;
 			std::shared_ptr<compute::kernel> marching_cubes_kernel_;
-			std::unique_ptr<class terrain> terrain_; 
+			std::unique_ptr<class terrain> terrain_;
+			graphics::program normal_program_;
 
 		public:
 			terrain_system(core::engine& engine);
@@ -79,6 +80,10 @@ namespace vbte {
 
 			auto& marching_cubes_kernel() noexcept {
 				return *marching_cubes_kernel_;
+			}
+
+			auto& normal_program() noexcept {
+				return normal_program_;
 			}
 
 		private:

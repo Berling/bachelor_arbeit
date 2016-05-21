@@ -42,6 +42,7 @@ namespace vbte {
 			terrain& operator=(terrain&&) = default;
 
 			void draw();
+			void draw_normals();
 			void update_lod_levels(const glm::vec3& position);
 		};
 	}

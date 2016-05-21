@@ -363,12 +363,12 @@ float3 interpolate_vertex(float isovalue, float3 p0, float3 p1, float s0, float 
 
 float3 calculate_normal(global const float* volume, size_t resolution, float grid_length, float3 p, size_t sample_resolution, float step_size) {
 	float3 gradient = (float3)(
-		(sample(volume, resolution, grid_length, p - (float3)(step_size, 0.f, 0.f), sample_resolution) - sample(volume, resolution, grid_length, p + (float3)(step_size, 0.f, 0.f), sample_resolution)) / (2.f * step_size),
-		(sample(volume, resolution, grid_length, p - (float3)(0.f, step_size, 0.f), sample_resolution) - sample(volume, resolution, grid_length, p + (float3)(0.f, step_size, 0.f), sample_resolution)) / (2.f * step_size),
-		(sample(volume, resolution, grid_length, p - (float3)(0.f, 0.f, step_size), sample_resolution) - sample(volume, resolution, grid_length, p + (float3)(0.f, 0.f, step_size), sample_resolution)) / (2.f * step_size)
+		(sample(volume, resolution, grid_length, p + (float3)(step_size, 0.f, 0.f), sample_resolution) - sample(volume, resolution, grid_length, p - (float3)(step_size, 0.f, 0.f), sample_resolution)) / (2.f * step_size),
+		(sample(volume, resolution, grid_length, p + (float3)(0.f, step_size, 0.f), sample_resolution) - sample(volume, resolution, grid_length, p - (float3)(0.f, step_size, 0.f), sample_resolution)) / (2.f * step_size),
+		(sample(volume, resolution, grid_length, p + (float3)(0.f, 0.f, step_size), sample_resolution) - sample(volume, resolution, grid_length, p - (float3)(0.f, 0.f, step_size), sample_resolution)) / (2.f * step_size)
 	);
 
-	return normalize(gradient);
+	return -normalize(gradient);
 }
 
 void generate_triangles(global const float* volume,
@@ -394,7 +394,7 @@ void generate_triangles(global const float* volume,
 	}
 
 	float sample_rate = grid_length / sample_resolution;
-	float half_sample_rate = sample_rate / 2.f;
+	float half_sample_rate = sample_rate / 2;
 
 	struct basic_vertex vertex_list[12];
 	if (edge_table[cube_index] & 1) {
@@ -458,7 +458,7 @@ void generate_triangles(global const float* volume,
 		vertex_list[11].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
 	}
 
-	for (int i = 0; triangle_table[cube_index][i] != - 1; i += 3) {
+	for (int i = 0; triangle_table[cube_index][i] != -1; i += 3) {
 		int index = atomic_add(vertex_count, 3);
 		vertices[index] = vertex_list[triangle_table[cube_index][i]];
 		vertices[index + 1] = vertex_list[triangle_table[cube_index][i + 1]];

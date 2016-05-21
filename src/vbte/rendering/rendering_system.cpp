@@ -172,6 +172,12 @@ namespace vbte {
 				glDisable(GL_CULL_FACE);
 			}
 
+			if (draw_normals_) {
+				for (auto& geometry : draw_queue_) {
+					geometry->draw_normals();
+				}
+			}
+
 			static bounding_box bb{engine_};
 
 			debug_program_.use();
