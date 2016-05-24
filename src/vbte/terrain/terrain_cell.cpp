@@ -130,16 +130,16 @@ namespace vbte {
 				auto argument_index = 7;
 				for (auto adjacent_cell : adjacent_cells_) {
 					auto& cell = *cells[adjacent_cell.index];
+					auto& data = cell.volume_data();
 					if (!cell.is_empty() && adjacent_cell.index != - 1) {
-						auto& data = cell.volume_data();
-						compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
-						kernel.arg(argument_index, cell.volume_buffer());
-
 						adjacent_cell.resolution = data.resolution() << cell.lod_level();
 						if (resolution < adjacent_cell.resolution) {
 							adjacent_cell.higher_resolution = true;
+							compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
+							kernel.arg(argument_index, cell.volume_buffer());
 						} else {
 							adjacent_cell.higher_resolution = false;
+							kernel.arg(argument_index, nullptr);
 						}
 					} else {
 						kernel.arg(argument_index, nullptr);
