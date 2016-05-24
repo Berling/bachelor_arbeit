@@ -144,13 +144,13 @@ int main(int argc, char* argv[]) {
 
 		size_t size = 2 * sizeof(uint32_t) + 2 * sizeof(uint64_t) + sizeof(float);
 		for (auto x = 0; x < grid_resolution; ++x) {
-			for (auto y = 0; y < grid_resolution; ++y) {
-				for (auto z = 0; z < 2; ++z) {
+			for (auto y = 0; y < 2; ++y) {
+				for (auto z = 0; z < grid_resolution; ++z) {
 					auto x_offset = x * cell_length;
 					auto y_offset = y * cell_length;
 					auto z_offset = z * cell_length;
 					vtdg::uniform_grid cell{cell_length, cell_resolution};
-					cell.fill(terrain, glm::vec3{x_offset, z_offset, y_offset});
+					cell.fill(terrain, glm::vec3{x_offset, y_offset, z_offset});
 					auto prefix = std::string{"../assets/"};
 					auto file_name = std::string{argv[4]};
 					auto path_without_prefix = "terrain/" + file_name + std::string{"_"} + std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(z) + std::string{".vol"};
