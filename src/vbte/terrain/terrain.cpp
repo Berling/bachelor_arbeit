@@ -54,7 +54,12 @@ namespace vbte {
 
 						cells_.emplace_back(
 							std::make_unique<terrain_cell>(
-								engine_, terrain_system_, glm::vec3{x * head.cell_length, z * head.cell_length, y * head.cell_length}, glm::angleAxis(0.f, glm::vec3{0.f}), cell_path
+								engine_,
+								terrain_system_,
+								*this,
+								glm::vec3{x * head.cell_length, z * head.cell_length, y * head.cell_length},
+								glm::angleAxis(0.f, glm::vec3{0.f}),
+								cell_path
 							)
 						);
 					}
@@ -74,8 +79,8 @@ namespace vbte {
 		}
 
 		void terrain::update_lod_levels(const glm::vec3& position) {
-			auto magic_distance = 1500.f;
-			auto magic_distance2 = 4500.f;
+			auto magic_distance = 400.f;
+			auto magic_distance2 = 800.f;
 			for (auto& cell : cells_) {
 				auto distance = glm::length2((cell->position() + cell->volume_data().grid_length() / 2.f) - position);
 				auto resolution = cell->volume_data().resolution();
