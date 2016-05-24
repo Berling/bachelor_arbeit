@@ -30,6 +30,7 @@ namespace vbte {
 			core::engine& engine_;
 			terrain_system& terrain_system_;
 			std::vector<std::unique_ptr<terrain_cell>> cells_;
+			size_t cells_per_dimension_;
 
 		public:
 			terrain(core::engine& engine, terrain_system& terrain_system, const std::string& path);
@@ -46,6 +47,10 @@ namespace vbte {
 
 			auto& cells() noexcept {
 				return cells_;
+			}
+
+			auto cells_per_dimension() const noexcept {
+				return cells_per_dimension_;
 			}
 		};
 	}

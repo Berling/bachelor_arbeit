@@ -17,6 +17,7 @@
 #include <vbte/graphics/vertex_layout.hpp>
 #include <vbte/rendering/rendering_system.hpp>
 #include <vbte/terrain/marching_cubes.hpp>
+#include <vbte/terrain/terrain.hpp>
 #include <vbte/terrain/terrain_cell.hpp>
 #include <vbte/terrain/terrain_system.hpp>
 #include <vbte/terrain/volume_data.hpp>
@@ -28,6 +29,7 @@ namespace vbte {
 		terrain_cell::terrain_cell(core::engine& engine,
 		                           terrain_system& terrain_system,
 		                           terrain& owner,
+		                           const glm::ivec3& index,
 		                           const glm::vec3& position,
 		                           const glm::quat& rotation,
 		                           const std::string& file_name) : rendering::drawable{engine, position, rotation},
@@ -59,6 +61,14 @@ namespace vbte {
 				engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
 				engine_.rendering_system().basic_layout().setup_layout(vao2_, &vbo2_);
 			}
+
+			auto cells_per_dimension = owner_.cells_per_dimension();
+			adjacent_cells_[0] = index.x == 0 ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x - 1)));
+			adjacent_cells_[1] = index.x == (cells_per_dimension - 1) ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x + 1)));
+			adjacent_cells_[2] = index.y == 0 ? -1 : (index.z + cells_per_dimension * ((index.y - 1) + 2 * index.x));
+			adjacent_cells_[3] = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
+			adjacent_cells_[4] = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
+			adjacent_cells_[5] = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
 		}
 
 		void terrain_cell::draw() const {

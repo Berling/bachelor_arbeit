@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <array>
 #include <atomic>
 #include <memory>
 #include <string>
@@ -52,9 +53,10 @@ namespace vbte {
 			bool build_ = true;
 			bool write_data_ = false;
 			size_t maximum_vertex_count_ = 0;
+			std::array<int, 6> adjacent_cells_;
 
 		public:
-			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
+			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::ivec3& index, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
 			~terrain_cell() = default;
 
 			void draw() const override;
@@ -82,6 +84,10 @@ namespace vbte {
 
 			auto lod_level() const noexcept {
 				return current_lod_level_;
+			}
+
+			auto& adjacent_cells() const noexcept {
+				return adjacent_cells_;
 			}
 
 		private:

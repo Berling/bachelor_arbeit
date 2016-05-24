@@ -1,5 +1,7 @@
 #include <stdexcept>
 
+#include <glm/gtx/string_cast.hpp>
+
 #include <vbte/asset/asset.hpp>
 #include <vbte/asset/asset_manager.hpp>
 #include <vbte/core/engine.hpp>
@@ -31,6 +33,7 @@ namespace vbte {
 
 			head.cell_count = *reinterpret_cast<const uint32_t*>(data_ptr);
 			data_ptr += sizeof(uint32_t);
+			cells_per_dimension_ = head.cell_count;
 
 			head.cell_resolution = *reinterpret_cast<const uint64_t*>(data_ptr);
 			data_ptr += sizeof(uint64_t);
@@ -45,8 +48,8 @@ namespace vbte {
 			data_ptr += sizeof(uint64_t);
 
 			for (auto x = 0; x < head.cell_count; ++x) {
-				for (auto y = 0; y < head.cell_count; ++y) {
-					for (auto z = 0; z < 2; ++z) {
+				for (auto y = 0; y < 2; ++y) {
+					for (auto z = 0; z < head.cell_count; ++z) {
 						auto path_size = *reinterpret_cast<const uint64_t*>(data_ptr);
 						data_ptr += sizeof(uint64_t);
 						std::string cell_path{data_ptr, path_size};
@@ -57,7 +60,8 @@ namespace vbte {
 								engine_,
 								terrain_system_,
 								*this,
-								glm::vec3{x * head.cell_length, z * head.cell_length, y * head.cell_length},
+								glm::ivec3{x, y, z},
+								glm::vec3{x * head.cell_length, y * head.cell_length, z * head.cell_length},
 								glm::angleAxis(0.f, glm::vec3{0.f}),
 								cell_path
 							)
