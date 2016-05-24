@@ -302,6 +302,12 @@ struct cell {
 	float values[8];
 };
 
+struct adjacent_cell {
+	int index;
+	uint resolution;
+	bool higher_resolution;
+};
+
 float value(global const float* volume, size_t resolution, size_t x, size_t y, size_t z) {
 	size_t actual_resolution = resolution + 1;
 	return volume[z + actual_resolution * (y + actual_resolution * x)];
@@ -472,7 +478,7 @@ kernel void marching_cubes(global const float* volume,
 													 float grid_length,
 													 global struct basic_vertex* vertices,
 													 global volatile int* vertex_count,
-													 global const int* adjacent_cells,
+													 global const struct adjacent_cell* adjacent_cells,
 													 global const float* adjacent_volume_left,
 													 global const float* adjacent_volume_right,
 													 global const float* adjacent_volume_bottom,

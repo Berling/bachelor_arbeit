@@ -52,25 +52,18 @@ namespace vbte {
 
 			if (!empty_) {
 				auto cells_per_dimension = owner_.cells_per_dimension();
-				adjacent_cells_[0] = index.x == 0 ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x - 1)));
-				adjacent_cells_[1] = index.x == (cells_per_dimension - 1) ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x + 1)));
-				adjacent_cells_[2] = index.y == 0 ? -1 : (index.z + cells_per_dimension * ((index.y - 1) + 2 * index.x));
-				adjacent_cells_[3] = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
-				adjacent_cells_[4] = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
-				adjacent_cells_[5] = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
-
-				auto adjacent_cell_count = 0;
-				for (auto index : adjacent_cells_) {
-					if (index != -1) {
-						++adjacent_cell_count;
-					}
-				}
+				adjacent_cells_[0].index = index.x == 0 ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x - 1)));
+				adjacent_cells_[1].index = index.x == (cells_per_dimension - 1) ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x + 1)));
+				adjacent_cells_[2].index = index.y == 0 ? -1 : (index.z + cells_per_dimension * ((index.y - 1) + 2 * index.x));
+				adjacent_cells_[3].index = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
+				adjacent_cells_[4].index = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
+				adjacent_cells_[5].index = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
 
 				auto& compute_context = terrain_system_.compute_context();
 				volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
 				vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, maximum_vertex_count_ * sizeof(rendering::basic_vertex));
 				vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
-				adjacent_cells_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, 6 * sizeof(int));
+				adjacent_cells_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, 6 * sizeof(adjacent_cell));
 
 				vertices_.resize(maximum_vertex_count_);
 
@@ -114,7 +107,7 @@ namespace vbte {
 				auto& compute_context = terrain_system_.compute_context();
 
 				compute_context.enqueue_write_buffer(*volume_buffer_, false, grid.grid().size() * sizeof(float), grid.grid().data());
-				compute_context.enqueue_write_buffer(*adjacent_cells_buffer_, false, 6 * sizeof(int), adjacent_cells_.data());
+				compute_context.enqueue_write_buffer(*adjacent_cells_buffer_, false, 6 * sizeof(adjacent_cell), adjacent_cells_.data());
 				if (initial_build_ || !front_) {
 					vertex_count_ = 0;
 					compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count_);
@@ -135,12 +128,19 @@ namespace vbte {
 
 				auto& cells = owner_.cells();
 				auto argument_index = 7;
-				for (auto index : adjacent_cells_) {
-					auto& adjacent_cell = *cells[index];
-					if (!adjacent_cell.is_empty() && index != - 1) {
-						auto& data = adjacent_cell.volume_data();
-						compute_context.enqueue_write_buffer(adjacent_cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
-						kernel.arg(argument_index, adjacent_cell.volume_buffer());
+				for (auto adjacent_cell : adjacent_cells_) {
+					auto& cell = *cells[adjacent_cell.index];
+					if (!cell.is_empty() && adjacent_cell.index != - 1) {
+						auto& data = cell.volume_data();
+						compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
+						kernel.arg(argument_index, cell.volume_buffer());
+
+						adjacent_cell.resolution = data.resolution() << cell.lod_level();
+						if (resolution < adjacent_cell.resolution) {
+							adjacent_cell.higher_resolution = true;
+						} else {
+							adjacent_cell.higher_resolution = false;
+						}
 					} else {
 						kernel.arg(argument_index, nullptr);
 					}

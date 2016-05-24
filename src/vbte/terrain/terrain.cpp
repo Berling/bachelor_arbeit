@@ -84,7 +84,7 @@ namespace vbte {
 
 		void terrain::update_lod_levels(const glm::vec3& position) {
 			auto magic_distance = 400.f;
-			auto magic_distance2 = 800.f;
+			auto magic_distance2 = 1000.f;
 			for (auto& cell : cells_) {
 				auto distance = glm::length2((cell->position() + cell->volume_data().grid_length() / 2.f) - position);
 				auto resolution = cell->volume_data().resolution();

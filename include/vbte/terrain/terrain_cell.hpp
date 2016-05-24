@@ -24,6 +24,12 @@ namespace vbte {
 		class volume_data;
 		class terrain;
 		class terrain_system;
+
+		struct adjacent_cell {
+			int32_t index;
+			uint32_t resolution;
+			bool higher_resolution;
+		};
 	}
 }
 
@@ -53,7 +59,7 @@ namespace vbte {
 			bool build_ = true;
 			bool write_data_ = false;
 			size_t maximum_vertex_count_ = 0;
-			std::array<int, 6> adjacent_cells_;
+			std::array<adjacent_cell, 6> adjacent_cells_;
 			std::unique_ptr<compute::buffer> adjacent_cells_buffer_;
 
 		public:
