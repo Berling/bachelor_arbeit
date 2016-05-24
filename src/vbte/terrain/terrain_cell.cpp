@@ -25,8 +25,19 @@
 
 namespace vbte {
 	namespace terrain {
-		terrain_cell::terrain_cell(core::engine& engine, terrain_system& terrain_system, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name) :
-		rendering::drawable{engine, position, rotation}, terrain_system_{terrain_system}, vbo_{GL_DYNAMIC_DRAW}, vbo2_{GL_DYNAMIC_DRAW}, vertex_count_{0}, empty_{false}, dirty_{false} {
+		terrain_cell::terrain_cell(core::engine& engine,
+		                           terrain_system& terrain_system,
+		                           terrain& owner,
+		                           const glm::vec3& position,
+		                           const glm::quat& rotation,
+		                           const std::string& file_name) : rendering::drawable{engine, position, rotation},
+		                                                           terrain_system_{terrain_system},
+		                                                           owner_{owner},
+		                                                           vbo_{GL_DYNAMIC_DRAW},
+		                                                           vbo2_{GL_DYNAMIC_DRAW},
+		                                                           vertex_count_{0},
+		                                                           empty_{false},
+		                                                           dirty_{false} {
 			volume_data_ = terrain_system_.volume_data_manager().load(file_name);
 			if (!volume_data_) {
 				throw std::runtime_error{"could not load file " + file_name};
