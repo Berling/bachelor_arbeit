@@ -43,6 +43,10 @@ namespace vbte {
 
 			void draw();
 			void update_lod_levels(const glm::vec3& position);
+
+			auto& cells() noexcept {
+				return cells_;
+			}
 		};
 	}
 }
