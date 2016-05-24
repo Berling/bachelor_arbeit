@@ -471,7 +471,14 @@ kernel void marching_cubes(global const float* volume,
 													 uint sample_resolution,
 													 float grid_length,
 													 global struct basic_vertex* vertices,
-													 global volatile int* vertex_count) {
+													 global volatile int* vertex_count,
+													 global const int* adjacent_cells,
+													 global const float* adjacent_volume_left,
+													 global const float* adjacent_volume_right,
+													 global const float* adjacent_volume_bottom,
+													 global const float* adjacent_volume_top,
+													 global const float* adjacent_volume_back,
+													 global const float* adjacent_volume_front) {
 	size_t x = get_global_id(0);
 	size_t y = get_global_id(1);
 	size_t z = get_global_id(2);

@@ -54,6 +54,7 @@ namespace vbte {
 			bool write_data_ = false;
 			size_t maximum_vertex_count_ = 0;
 			std::array<int, 6> adjacent_cells_;
+			std::unique_ptr<compute::buffer> adjacent_cells_buffer_;
 
 		public:
 			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::ivec3& index, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
@@ -64,6 +65,10 @@ namespace vbte {
 
 			auto& volume_data() const noexcept {
 				return *volume_data_;
+			}
+
+			auto& volume_buffer() noexcept {
+				return *volume_buffer_;
 			}
 
 			auto is_empty() const noexcept {

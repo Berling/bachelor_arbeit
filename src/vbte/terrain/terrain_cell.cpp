@@ -51,24 +51,32 @@ namespace vbte {
 			}
 
 			if (!empty_) {
+				auto cells_per_dimension = owner_.cells_per_dimension();
+				adjacent_cells_[0] = index.x == 0 ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x - 1)));
+				adjacent_cells_[1] = index.x == (cells_per_dimension - 1) ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x + 1)));
+				adjacent_cells_[2] = index.y == 0 ? -1 : (index.z + cells_per_dimension * ((index.y - 1) + 2 * index.x));
+				adjacent_cells_[3] = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
+				adjacent_cells_[4] = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
+				adjacent_cells_[5] = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
+
+				auto adjacent_cell_count = 0;
+				for (auto index : adjacent_cells_) {
+					if (index != -1) {
+						++adjacent_cell_count;
+					}
+				}
+
 				auto& compute_context = terrain_system_.compute_context();
 				volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
 				vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, maximum_vertex_count_ * sizeof(rendering::basic_vertex));
 				vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
+				adjacent_cells_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, 6 * sizeof(int));
 
 				vertices_.resize(maximum_vertex_count_);
 
 				engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
 				engine_.rendering_system().basic_layout().setup_layout(vao2_, &vbo2_);
 			}
-
-			auto cells_per_dimension = owner_.cells_per_dimension();
-			adjacent_cells_[0] = index.x == 0 ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x - 1)));
-			adjacent_cells_[1] = index.x == (cells_per_dimension - 1) ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x + 1)));
-			adjacent_cells_[2] = index.y == 0 ? -1 : (index.z + cells_per_dimension * ((index.y - 1) + 2 * index.x));
-			adjacent_cells_[3] = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
-			adjacent_cells_[4] = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
-			adjacent_cells_[5] = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
 		}
 
 		void terrain_cell::draw() const {
@@ -106,6 +114,7 @@ namespace vbte {
 				auto& compute_context = terrain_system_.compute_context();
 
 				compute_context.enqueue_write_buffer(*volume_buffer_, false, grid.grid().size() * sizeof(float), grid.grid().data());
+				compute_context.enqueue_write_buffer(*adjacent_cells_buffer_, false, 6 * sizeof(int), adjacent_cells_.data());
 				if (initial_build_ || !front_) {
 					vertex_count_ = 0;
 					compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count_);
@@ -122,6 +131,22 @@ namespace vbte {
 				kernel.arg(3, grid.grid_length());
 				kernel.arg(4, *vertex_buffer_);
 				kernel.arg(5, *vertex_count_buffer_);
+				kernel.arg(6, *adjacent_cells_buffer_);
+
+				auto& cells = owner_.cells();
+				auto argument_index = 7;
+				for (auto index : adjacent_cells_) {
+					auto& adjacent_cell = *cells[index];
+					if (!adjacent_cell.is_empty() && index != - 1) {
+						auto& data = adjacent_cell.volume_data();
+						compute_context.enqueue_write_buffer(adjacent_cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
+						kernel.arg(argument_index, adjacent_cell.volume_buffer());
+					} else {
+						kernel.arg(argument_index, nullptr);
+					}
+					++argument_index;
+				}
+
 				auto event = compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
 				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 
