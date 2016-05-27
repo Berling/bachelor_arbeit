@@ -1,9 +1,11 @@
+#include <algorithm>
 #include <stdexcept>
 
 #include <glm/gtx/string_cast.hpp>
 
 #include <vbte/asset/asset.hpp>
 #include <vbte/asset/asset_manager.hpp>
+#include <vbte/core/camera.hpp>
 #include <vbte/core/engine.hpp>
 #include <vbte/rendering/rendering_system.hpp>
 #include <vbte/terrain/terrain.hpp>
@@ -69,6 +71,9 @@ namespace vbte {
 					}
 				}
 			}
+
+			auto& camera = engine_.camera();
+			update_lod_levels(camera.position(), false);
 		}
 
 		void terrain::draw() {
@@ -82,21 +87,40 @@ namespace vbte {
 			}
 		}
 
-		void terrain::update_lod_levels(const glm::vec3& position) {
+		void terrain::update_lod_levels(const glm::vec3& position, bool update_geometry) {
+			auto shortest_distance = [&](const auto& cell, const auto& position) {
+				std::vector<float> dists;
+				dists.emplace_back(glm::length2((cell->position() + cell->volume_data().grid_length() / 2.f) - position));
+				dists.emplace_back(glm::length2((cell->position()) - position));
+				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), 0.f, 0.f}) - position));
+				dists.emplace_back(glm::length2((cell->position() + glm::vec3{0.f, cell->volume_data().grid_length(), 0.f}) - position));
+				dists.emplace_back(glm::length2((cell->position() + glm::vec3{0.f, 0.f, cell->volume_data().grid_length()}) - position));
+				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), cell->volume_data().grid_length(), 0.f}) - position));
+				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), 0.f, cell->volume_data().grid_length()}) - position));
+				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), cell->volume_data().grid_length(), 0.f}) - position));
+				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), cell->volume_data().grid_length(), cell->volume_data().grid_length()}) - position));
+				std::sort(dists.begin(), dists.end());
+				return dists.front();
+			};
+
 			auto magic_distance = 400.f;
 			auto magic_distance2 = 1000.f;
 			for (auto& cell : cells_) {
-				auto distance = glm::length2((cell->position() + cell->volume_data().grid_length() / 2.f) - position);
-				auto resolution = cell->volume_data().resolution();
+				auto distance = shortest_distance(cell, position);
 				if (distance > magic_distance2) {
 					cell->lod_level(2);
-					cell->update_geometry(resolution / 4);
 				} else if(distance > magic_distance) {
 					cell->lod_level(1);
-					cell->update_geometry(resolution / 2);
 				} else {
 					cell->lod_level(0);
-					cell->update_geometry(resolution);
+				}
+			}
+
+			for (auto& cell: cells_) {
+				auto resolution = cell->volume_data().resolution();
+				cell->update_adjacent_cells_info();
+				if (update_geometry) {
+					cell->update_geometry(resolution >> cell->lod_level());
 				}
 			}
 		}

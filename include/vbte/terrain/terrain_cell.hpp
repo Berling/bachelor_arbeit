@@ -26,9 +26,9 @@ namespace vbte {
 		class terrain_system;
 
 		struct adjacent_cell {
-			int32_t index;
-			uint32_t resolution;
-			bool higher_resolution;
+			int32_t index = 0;
+			uint32_t resolution = 0;
+			uint32_t higher_resolution = false;
 		};
 	}
 }
@@ -100,6 +100,8 @@ namespace vbte {
 			auto& adjacent_cells() const noexcept {
 				return adjacent_cells_;
 			}
+
+			void update_adjacent_cells_info() noexcept;
 
 		private:
 			void marching_cubes(const class volume_data& grid, size_t resolution);

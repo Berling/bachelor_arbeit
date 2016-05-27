@@ -1,3 +1,5 @@
+#pragma OPENCL EXTENSION cl_amd_printf : enable
+
 constant int edge_table[256] = {
 	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 	0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
@@ -1102,26 +1104,72 @@ kernel void marching_cubes(global const float* volume,
 	size_t x = get_global_id(0);
 	size_t y = get_global_id(1);
 	size_t z = get_global_id(2);
-	float sample_rate = grid_length / sample_resolution;
-	float3 p = (float3)(x, y , z) * sample_rate;
-	struct cell c;
-	c.vertices[0] = p;
-	c.vertices[1] = p + (float3)(sample_rate, 0.f, 0.f);
-	c.vertices[2] = p + (float3)(sample_rate, 0.f, sample_rate);
-	c.vertices[3] = p + (float3)(0.f, 0.f, sample_rate);
-	c.vertices[4] = p + (float3)(0.f, sample_rate, 0.f);
-	c.vertices[5] = p + (float3)(sample_rate, sample_rate, 0.f);
-	c.vertices[6] = p + (float3)(sample_rate, sample_rate, sample_rate);
-	c.vertices[7] = p + (float3)(0.f, sample_rate, sample_rate);
+	if (x != 0 && x != sample_resolution - 1 && y != 0 && y != sample_resolution - 1 && z != 0 && z != sample_resolution - 1) {
+		float sample_rate = grid_length / sample_resolution;
+		float3 p = (float3)(x, y , z) * sample_rate;
+		struct cell c;
+		c.vertices[0] = p;
+		c.vertices[1] = p + (float3)(sample_rate, 0.f, 0.f);
+		c.vertices[2] = p + (float3)(sample_rate, 0.f, sample_rate);
+		c.vertices[3] = p + (float3)(0.f, 0.f, sample_rate);
+		c.vertices[4] = p + (float3)(0.f, sample_rate, 0.f);
+		c.vertices[5] = p + (float3)(sample_rate, sample_rate, 0.f);
+		c.vertices[6] = p + (float3)(sample_rate, sample_rate, sample_rate);
+		c.vertices[7] = p + (float3)(0.f, sample_rate, sample_rate);
 
-	c.values[0] = sample(volume, resolution, grid_length, c.vertices[0], sample_resolution);
-	c.values[1] = sample(volume, resolution, grid_length, c.vertices[1], sample_resolution);
-	c.values[2] = sample(volume, resolution, grid_length, c.vertices[2], sample_resolution);
-	c.values[3] = sample(volume, resolution, grid_length, c.vertices[3], sample_resolution);
-	c.values[4] = sample(volume, resolution, grid_length, c.vertices[4], sample_resolution);
-	c.values[5] = sample(volume, resolution, grid_length, c.vertices[5], sample_resolution);
-	c.values[6] = sample(volume, resolution, grid_length, c.vertices[6], sample_resolution);
-	c.values[7] = sample(volume, resolution, grid_length, c.vertices[7], sample_resolution);
+		c.values[0] = sample(volume, resolution, grid_length, c.vertices[0], sample_resolution);
+		c.values[1] = sample(volume, resolution, grid_length, c.vertices[1], sample_resolution);
+		c.values[2] = sample(volume, resolution, grid_length, c.vertices[2], sample_resolution);
+		c.values[3] = sample(volume, resolution, grid_length, c.vertices[3], sample_resolution);
+		c.values[4] = sample(volume, resolution, grid_length, c.vertices[4], sample_resolution);
+		c.values[5] = sample(volume, resolution, grid_length, c.vertices[5], sample_resolution);
+		c.values[6] = sample(volume, resolution, grid_length, c.vertices[6], sample_resolution);
+		c.values[7] = sample(volume, resolution, grid_length, c.vertices[7], sample_resolution);
 
-	generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count);
+		generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count);
+	} else {
+		int transition_cell_case = 0;
+		if (x == 0 && adjacent_cells[0].index != -1 && adjacent_cells[0].higher_resolution) {
+			transition_cell_case |= 1;
+		}
+		if (x == sample_resolution - 1 && adjacent_cells[1].index != -1 && adjacent_cells[1].higher_resolution) {
+			transition_cell_case |= 2;
+		}
+		if (y == 0 && adjacent_cells[2].index != -1 && adjacent_cells[2].higher_resolution) {
+			transition_cell_case |= 4;
+		}
+		if (y == sample_resolution - 1 && adjacent_cells[3].index != -1 && adjacent_cells[3].higher_resolution) {
+			transition_cell_case |= 8;
+		}
+		if (z == 0 && adjacent_cells[4].index != -1 && adjacent_cells[4].higher_resolution) {
+			transition_cell_case |= 16;
+		}
+		if (z == sample_resolution - 1 && adjacent_cells[5].index != -1 && adjacent_cells[5].higher_resolution) {
+			transition_cell_case |= 32;
+		}
+		if (transition_cell_case == 0) {
+			float sample_rate = grid_length / sample_resolution;
+			float3 p = (float3)(x, y , z) * sample_rate;
+			struct cell c;
+			c.vertices[0] = p;
+			c.vertices[1] = p + (float3)(sample_rate, 0.f, 0.f);
+			c.vertices[2] = p + (float3)(sample_rate, 0.f, sample_rate);
+			c.vertices[3] = p + (float3)(0.f, 0.f, sample_rate);
+			c.vertices[4] = p + (float3)(0.f, sample_rate, 0.f);
+			c.vertices[5] = p + (float3)(sample_rate, sample_rate, 0.f);
+			c.vertices[6] = p + (float3)(sample_rate, sample_rate, sample_rate);
+			c.vertices[7] = p + (float3)(0.f, sample_rate, sample_rate);
+
+			c.values[0] = sample(volume, resolution, grid_length, c.vertices[0], sample_resolution);
+			c.values[1] = sample(volume, resolution, grid_length, c.vertices[1], sample_resolution);
+			c.values[2] = sample(volume, resolution, grid_length, c.vertices[2], sample_resolution);
+			c.values[3] = sample(volume, resolution, grid_length, c.vertices[3], sample_resolution);
+			c.values[4] = sample(volume, resolution, grid_length, c.vertices[4], sample_resolution);
+			c.values[5] = sample(volume, resolution, grid_length, c.vertices[5], sample_resolution);
+			c.values[6] = sample(volume, resolution, grid_length, c.vertices[6], sample_resolution);
+			c.values[7] = sample(volume, resolution, grid_length, c.vertices[7], sample_resolution);
+
+			generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count);
+		}
+	}
 }

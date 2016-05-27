@@ -107,7 +107,6 @@ namespace vbte {
 				auto& compute_context = terrain_system_.compute_context();
 
 				compute_context.enqueue_write_buffer(*volume_buffer_, false, grid.grid().size() * sizeof(float), grid.grid().data());
-				compute_context.enqueue_write_buffer(*adjacent_cells_buffer_, false, 6 * sizeof(adjacent_cell), adjacent_cells_.data());
 				if (initial_build_ || !front_) {
 					vertex_count_ = 0;
 					compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count_);
@@ -124,21 +123,17 @@ namespace vbte {
 				kernel.arg(3, grid.grid_length());
 				kernel.arg(4, *vertex_buffer_);
 				kernel.arg(5, *vertex_count_buffer_);
-				kernel.arg(6, *adjacent_cells_buffer_);
 
 				auto& cells = owner_.cells();
 				auto argument_index = 7;
-				for (auto adjacent_cell : adjacent_cells_) {
+				for (auto& adjacent_cell : adjacent_cells_) {
 					auto& cell = *cells[adjacent_cell.index];
 					auto& data = cell.volume_data();
 					if (!cell.is_empty() && adjacent_cell.index != - 1) {
-						adjacent_cell.resolution = data.resolution() << cell.lod_level();
-						if (resolution < adjacent_cell.resolution) {
-							adjacent_cell.higher_resolution = true;
+						if (adjacent_cell.higher_resolution) {
 							compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
 							kernel.arg(argument_index, cell.volume_buffer());
 						} else {
-							adjacent_cell.higher_resolution = false;
 							kernel.arg(argument_index, nullptr);
 						}
 					} else {
@@ -147,6 +142,8 @@ namespace vbte {
 					++argument_index;
 				}
 
+				compute_context.enqueue_write_buffer(*adjacent_cells_buffer_, false, 6 * sizeof(adjacent_cell), adjacent_cells_.data());
+				kernel.arg(6, *adjacent_cells_buffer_);
 				auto event = compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
 				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 
@@ -164,6 +161,31 @@ namespace vbte {
 					this
 				);
 				write_data_ = true;
+			}
+		}
+
+		void terrain_cell::update_adjacent_cells_info() noexcept {
+			auto& cells = owner_.cells();
+			for (auto& adjacent_cell : adjacent_cells_) {
+				if (adjacent_cell.index != -1) {
+					auto& cell = *cells[adjacent_cell.index];
+					if (!cell.is_empty()) {
+						auto& data = cell.volume_data();
+						adjacent_cell.resolution = data.resolution() >> cell.lod_level();
+
+						if (data.resolution() >> lod_level() < adjacent_cell.resolution) {
+							if (!adjacent_cell.higher_resolution) {
+								build_ = true;
+							}
+							adjacent_cell.higher_resolution = true;
+						} else {
+							if (adjacent_cell.higher_resolution) {
+								build_ = true;
+							}
+							adjacent_cell.higher_resolution = false;
+						}
+					}
+				}
 			}
 		}
 	}

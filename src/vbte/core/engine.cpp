@@ -34,8 +34,8 @@ namespace vbte {
 
 			graphics_system_ = std::make_unique<graphics::graphics_system>(*this);
 			rendering_system_ = std::make_unique<rendering::rendering_system>(*this);
-			terrain_system_ = std::make_unique<terrain::terrain_system>(*this);
 			camera_ = std::make_unique<core::camera>(*this, glm::vec3{25.f, 25.f, 25.f}, glm::radians(45.f), 0.1f, 1000.f);
+			terrain_system_ = std::make_unique<terrain::terrain_system>(*this);
 
 			/*auto& volume_data_manager = terrain_system_->volume_data_manager();
 			auto sphere = volume_data_manager.load("terrain/test.vol");
