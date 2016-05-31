@@ -30,6 +30,7 @@ namespace vbte {
 			core::engine& engine_;
 			terrain_system& terrain_system_;
 			std::vector<std::unique_ptr<terrain_cell>> cells_;
+			std::vector<size_t> sorted_cells_;
 			size_t cells_per_dimension_;
 
 		public:

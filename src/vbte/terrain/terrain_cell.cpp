@@ -127,9 +127,9 @@ namespace vbte {
 				auto& cells = owner_.cells();
 				auto argument_index = 7;
 				for (auto& adjacent_cell : adjacent_cells_) {
-					auto& cell = *cells[adjacent_cell.index];
-					auto& data = cell.volume_data();
-					if (!cell.is_empty() && adjacent_cell.index != - 1) {
+					if (adjacent_cell.index != - 1 && !cells[adjacent_cell.index]->is_empty()) {
+						auto& cell = *cells[adjacent_cell.index];
+						auto& data = cell.volume_data();
 						if (adjacent_cell.higher_resolution) {
 							compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
 							kernel.arg(argument_index, cell.volume_buffer());

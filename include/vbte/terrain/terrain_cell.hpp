@@ -87,10 +87,11 @@ namespace vbte {
 
 			void lod_level(int level) noexcept {
 				assert(level <= 2);
-				if (current_lod_level_ != level) {
-					build_ = true;
-				}
 				current_lod_level_ = level;
+			}
+
+			void build() noexcept {
+				build_ = true;
 			}
 
 			auto lod_level() const noexcept {
