@@ -1088,6 +1088,32 @@ void generate_triangles(global const float* volume,
 	}
 }
 
+void generate_transition_triangles(global const float* volume,
+												size_t resolution,
+												float grid_length,
+												struct transition_cell grid_cell,
+												size_t sample_resolution,
+												global struct basic_vertex* vertices,
+												global volatile int* vertex_count,
+												struct adjacent_cell adj_cell,
+												global const float* adj_volume) {
+	int cube_index = 0;
+	float isovalue = 0.f;
+	if (grid_cell.values[0] < isovalue) { cube_index |= 1; }
+	if (grid_cell.values[1] < isovalue) { cube_index |= 2; }
+	if (grid_cell.values[2] < isovalue) { cube_index |= 4; }
+	if (grid_cell.values[3] < isovalue) { cube_index |= 8; }
+	if (grid_cell.values[4] < isovalue) { cube_index |= 16; }
+	if (grid_cell.values[5] < isovalue) { cube_index |= 32; }
+	if (grid_cell.values[6] < isovalue) { cube_index |= 64; }
+	if (grid_cell.values[7] < isovalue) { cube_index |= 128; }
+	if (grid_cell.values[8] < isovalue) { cube_index |= 256; }
+
+	if (cube_index == 0 || cube_index == 511) {
+		return;
+	}
+}
+
 kernel void marching_cubes(global const float* volume,
 													 uint resolution,
 													 uint sample_resolution,
@@ -1237,6 +1263,8 @@ kernel void marching_cubes(global const float* volume,
 				c.values[10] = sample(volume, resolution, grid_length, t.vertices[10], sample_resolution);
 				c.values[11] = sample(volume, resolution, grid_length, t.vertices[11], sample_resolution);
 				c.values[12] = sample(volume, resolution, grid_length, t.vertices[12], sample_resolution);
+
+				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells[4], adjacent_volume_back);
 			}
 		}
 	}
