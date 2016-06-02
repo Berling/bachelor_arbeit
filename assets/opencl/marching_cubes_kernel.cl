@@ -294,7 +294,7 @@ constant int triangle_table[256][16] = {
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
-constant unsigned char transition_cell_class[512] = {
+constant int transition_cell_class[512] = {
 	0x00, 0x01, 0x02, 0x84, 0x01, 0x05, 0x04, 0x04, 0x02, 0x87, 0x09, 0x8C, 0x84, 0x0B, 0x05, 0x05,
 	0x01, 0x08, 0x07, 0x8D, 0x05, 0x0F, 0x8B, 0x0B, 0x04, 0x0D, 0x0C, 0x1C, 0x04, 0x8B, 0x85, 0x85,
 	0x02, 0x07, 0x09, 0x8C, 0x87, 0x10, 0x0C, 0x0C, 0x09, 0x12, 0x15, 0x9A, 0x8C, 0x19, 0x90, 0x10,
@@ -388,7 +388,7 @@ constant int transition_cell_data[56][37] = {
 	{0, 1, 5, 1, 4, 5, 1, 2, 4, 2, 3, 4, 2, 6, 3, 3, 6, 7, 0, 8, 9, 0, 5, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
-constant short transition_vertex_data[512][13] = {
+constant int transition_vertex_data[512][13] = {
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 	{8961, 5379, 6555, 10394, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 	{8961, 9234, 17684, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -1099,21 +1099,21 @@ void generate_transition_triangles(global const float* volume,
 												global const float* adj_volume) {
 	int cube_index = 0;
 	float isovalue = 0.f;
-	if (grid_cell.values[0] < isovalue) { cube_index |= 1; }
-	if (grid_cell.values[1] < isovalue) { cube_index |= 2; }
-	if (grid_cell.values[2] < isovalue) { cube_index |= 4; }
-	if (grid_cell.values[3] < isovalue) { cube_index |= 8; }
-	if (grid_cell.values[4] < isovalue) { cube_index |= 16; }
-	if (grid_cell.values[5] < isovalue) { cube_index |= 32; }
-	if (grid_cell.values[6] < isovalue) { cube_index |= 64; }
-	if (grid_cell.values[7] < isovalue) { cube_index |= 128; }
-	if (grid_cell.values[8] < isovalue) { cube_index |= 256; }
+	if (grid_cell.values[0] < isovalue) { cube_index += 0x01; }
+	if (grid_cell.values[1] < isovalue) { cube_index += 0x02; }
+	if (grid_cell.values[2] < isovalue) { cube_index += 0x04; }
+	if (grid_cell.values[3] < isovalue) { cube_index += 0x80; }
+	if (grid_cell.values[4] < isovalue) { cube_index += 0x100; }
+	if (grid_cell.values[5] < isovalue) { cube_index += 0x08; }
+	if (grid_cell.values[6] < isovalue) { cube_index += 0x40; }
+	if (grid_cell.values[7] < isovalue) { cube_index += 0x20; }
+	if (grid_cell.values[8] < isovalue) { cube_index += 0x10; }
 
 	if (cube_index == 0 || cube_index == 511) {
 		return;
 	}
 /*
-	if (get_global_id(0) != 0) {
+	if (get_global_id(1) != 0) {
 		return;
 	}
 
@@ -1128,7 +1128,9 @@ void generate_transition_triangles(global const float* volume,
 		int high_index = (transition_vertex_data[cube_index][i] >> 4) & 15;
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[low_index], grid_cell.vertices[high_index], grid_cell.values[low_index], grid_cell.values[high_index]);
 /*
-		printf("v0: %f", grid_cell.values[low_index]);
+		printf("low: %d", low_index);
+		printf(" high: %d", high_index);
+		printf(" v0: %f", grid_cell.values[low_index]);
 		printf(" v1: %f", grid_cell.values[high_index]);
 		printf(" s(%f, %f, %f)", vertex.x, vertex.y, vertex.z);
 		printf(" s0(%f, %f, %f)", grid_cell.vertices[low_index].x, grid_cell.vertices[low_index].y, grid_cell.vertices[low_index].z);
@@ -1139,13 +1141,23 @@ void generate_transition_triangles(global const float* volume,
 	}
 
 	int class_index = transition_cell_class[cube_index] & 0x7f;
-	for (int i = 0; transition_cell_data[class_index][i] != -1; i += 3) {
-		int index = atomic_add(vertex_count, 3);
-		vertices[index] = vertex_list[transition_cell_data[class_index][i]];
-		vertices[index + 1] = vertex_list[transition_cell_data[class_index][i + 1]];
-		vertices[index + 2] = vertex_list[transition_cell_data[class_index][i + 2]];
+//	printf("\nclass_index: %d\n\n", class_index);
+	if (transition_cell_class[cube_index] & 0x80) {
+		for (int i = 0; transition_cell_data[class_index][i] != -1; i += 3) {
+			int index = atomic_add(vertex_count, 3);
+			vertices[index] = vertex_list[transition_cell_data[class_index][i]];
+			vertices[index + 1] = vertex_list[transition_cell_data[class_index][i + 1]];
+			vertices[index + 2] = vertex_list[transition_cell_data[class_index][i + 2]];
+		}
+	} else {
+		for (int i = 0; transition_cell_data[class_index][i] != -1; i += 3) {
+			int index = atomic_add(vertex_count, 3);
+			vertices[index] = vertex_list[transition_cell_data[class_index][i]];
+			vertices[index + 1] = vertex_list[transition_cell_data[class_index][i + 2]];
+			vertices[index + 2] = vertex_list[transition_cell_data[class_index][i + 1]];
+		}
 	}
-/*
+
 	int indices[30] = {
 		0, 4, 3,
 		0, 1, 4,
@@ -1159,7 +1171,7 @@ void generate_transition_triangles(global const float* volume,
 		9, 10, 12
 	};
 
-	for (int i = 0; i < 30; i += 3) {
+/*	for (int i = 0; i < 30; i += 3) {
 		int index = atomic_add(vertex_count, 3);
 		vertices[index].position = grid_cell.vertices[indices[i]];
 		vertices[index + 1].position = grid_cell.vertices[indices[i + 1]];
