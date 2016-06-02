@@ -1170,8 +1170,8 @@ void generate_transition_triangles(global const float* volume,
 		9, 12, 11,
 		9, 10, 12
 	};
-
-/*	for (int i = 0; i < 30; i += 3) {
+/*
+	for (int i = 0; i < 30; i += 3) {
 		int index = atomic_add(vertex_count, 3);
 		vertices[index].position = grid_cell.vertices[indices[i]];
 		vertices[index + 1].position = grid_cell.vertices[indices[i + 1]];
@@ -1281,14 +1281,14 @@ kernel void marching_cubes(global const float* volume,
 			float sample_rate = grid_length / sample_resolution;
 			float3 p = (float3)(x, y , z) * sample_rate;
 			struct cell c;
-			c.vertices[0] = p + (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
-			c.vertices[1] = p + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
-			c.vertices[2] = p + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[2], sample_rate + transition_cell_offset[5]);
-			c.vertices[3] = p + (float3)(transition_cell_offset[0], transition_cell_offset[2], sample_rate + transition_cell_offset[5]);
-			c.vertices[4] = p + (float3)(transition_cell_offset[0], sample_rate + transition_cell_offset[3], transition_cell_offset[4]);
-			c.vertices[5] = p + (float3)(sample_rate + transition_cell_offset[1], sample_rate + transition_cell_offset[3], transition_cell_offset[4]);
-			c.vertices[6] = p + (float3)(sample_rate + transition_cell_offset[1], sample_rate + transition_cell_offset[3], sample_rate + transition_cell_offset[5]);
-			c.vertices[7] = p + (float3)(transition_cell_offset[0], sample_rate + transition_cell_offset[3], sample_rate + transition_cell_offset[5]);
+			c.vertices[0] = p;
+			c.vertices[1] = p + (float3)(sample_rate, 0.f, 0.f);
+			c.vertices[2] = p + (float3)(sample_rate, 0.f, sample_rate);
+			c.vertices[3] = p + (float3)(0.f, 0.f, sample_rate);
+			c.vertices[4] = p + (float3)(0.f, sample_rate, 0.f);
+			c.vertices[5] = p + (float3)(sample_rate, sample_rate, 0.f);
+			c.vertices[6] = p + (float3)(sample_rate, sample_rate, sample_rate);
+			c.vertices[7] = p + (float3)(0.f, sample_rate, sample_rate);
 
 			c.values[0] = sample(volume, resolution, grid_length, c.vertices[0], sample_resolution);
 			c.values[1] = sample(volume, resolution, grid_length, c.vertices[1], sample_resolution);
@@ -1298,6 +1298,15 @@ kernel void marching_cubes(global const float* volume,
 			c.values[5] = sample(volume, resolution, grid_length, c.vertices[5], sample_resolution);
 			c.values[6] = sample(volume, resolution, grid_length, c.vertices[6], sample_resolution);
 			c.values[7] = sample(volume, resolution, grid_length, c.vertices[7], sample_resolution);
+
+			c.vertices[0] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
+			c.vertices[1] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
+			c.vertices[2] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[5]);
+			c.vertices[3] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[5]);
+			c.vertices[4] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[4]);
+			c.vertices[5] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[4]);
+			c.vertices[6] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[5]);
+			c.vertices[7] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[5]);
 
 			generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count);
 
@@ -1320,19 +1329,19 @@ kernel void marching_cubes(global const float* volume,
 				// + 0.f is a bug fix. Without this expression the following line causes the program to crash or the driver to reject kernel execution.
 				t.vertices[12] = p + (float3)(sample_rate + transition_cell_offset[1] + 0.f, sample_rate + transition_cell_offset[3] + 0.f, transition_cell_offset[4]);
 
-				t.values[0] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[0], adjacent_cells[4].resolution);
-				t.values[1] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[1], adjacent_cells[4].resolution);
-				t.values[2] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[2], adjacent_cells[4].resolution);
-				t.values[3] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[3], adjacent_cells[4].resolution);
-				t.values[4] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[4], adjacent_cells[4].resolution);
-				t.values[5] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[5], adjacent_cells[4].resolution);
-				t.values[6] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[6], adjacent_cells[4].resolution);
-				t.values[7] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[7], adjacent_cells[4].resolution);
-				t.values[8] = sample(adjacent_volume_back, resolution, grid_length, t.vertices[8], adjacent_cells[4].resolution);
-				t.values[9] = sample(volume, resolution, grid_length, t.vertices[9], sample_resolution);
-				t.values[10] = sample(volume, resolution, grid_length, t.vertices[10], sample_resolution);
-				t.values[11] = sample(volume, resolution, grid_length, t.vertices[11], sample_resolution);
-				t.values[12] = sample(volume, resolution, grid_length, t.vertices[12], sample_resolution);
+				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], adjacent_cells[4].resolution);
+				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], adjacent_cells[4].resolution);
+				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], adjacent_cells[4].resolution);
+				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], adjacent_cells[4].resolution);
+				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], adjacent_cells[4].resolution);
+				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], adjacent_cells[4].resolution);
+				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], adjacent_cells[4].resolution);
+				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], adjacent_cells[4].resolution);
+				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], adjacent_cells[4].resolution);
+				t.values[9] = sample(volume, resolution, grid_length, t.vertices[0], sample_resolution);
+				t.values[10] = sample(volume, resolution, grid_length, t.vertices[2], sample_resolution);
+				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
+				t.values[12] = sample(volume, resolution, grid_length, t.vertices[8], sample_resolution);
 
 				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells[4], adjacent_volume_back);
 			}

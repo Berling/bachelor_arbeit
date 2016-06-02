@@ -67,7 +67,7 @@ namespace vbte {
 						(cl_context_properties)(default_platform)(),
 						0
 					};
-					default_context_ = cl::Context{CL_DEVICE_TYPE_GPU, properties};
+					default_context_ = cl::Context{CL_DEVICE_TYPE_CPU, properties};
 
 					const auto& devices = default_context_.getInfo<CL_CONTEXT_DEVICES>();
 					default_device_ = devices.at(0);
