@@ -74,6 +74,16 @@ namespace vbte {
 			}
 
 			auto& camera = engine_.camera();
+
+			cells_[0]->lod_level(0);
+			cells_[1]->lod_level(1);
+			cells_[2]->lod_level(0);
+			cells_[3]->lod_level(0);
+			cells_[4]->lod_level(0);
+			cells_[5]->lod_level(0);
+			cells_[6]->lod_level(0);
+			cells_[7]->lod_level(0);
+
 			update_lod_levels(camera.position(), false);
 		}
 
@@ -89,7 +99,7 @@ namespace vbte {
 		}
 
 		void terrain::update_lod_levels(const glm::vec3& position, bool update_geometry) {
-			std::unordered_map<intptr_t, float> distances;
+/*			std::unordered_map<intptr_t, float> distances;
 
 			auto shortest_distance = [&](const auto& cell) {
 				std::vector<float> dists;
@@ -155,7 +165,7 @@ namespace vbte {
 				if (current_lod_level != cell->lod_level()) {
 					cell->build();
 				}
-			}
+			}*/
 
 			for (auto& cell: cells_) {
 				auto resolution = cell->volume_data().resolution();

@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
 					auto y_offset = y * cell_length;
 					auto z_offset = z * cell_length;
 					vtdg::uniform_grid cell{cell_length, cell_resolution};
-					cell.fill(terrain, glm::vec3{x_offset, y_offset, z_offset});
+					cell.fill(plane, glm::vec3{x_offset, y_offset, z_offset});
 					auto prefix = std::string{"../assets/"};
 					auto file_name = std::string{argv[4]};
 					auto path_without_prefix = "terrain/" + file_name + std::string{"_"} + std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(z) + std::string{".vol"};
