@@ -1112,36 +1112,21 @@ void generate_transition_triangles(global const float* volume,
 	if (cube_index == 0 || cube_index == 511) {
 		return;
 	}
-/*
-	if (get_global_id(1) != 0) {
-		return;
-	}
 
-	for (int i = 0; i < 13; ++i) {
-		printf("v%d(%f, %f, %f) s(%f)\n", i, grid_cell.vertices[i].x, grid_cell.vertices[i].y, grid_cell.vertices[i].z, grid_cell.values[i]);
-	}
-	printf("\n");
-*/
+	float sample_rate = grid_length / sample_resolution;
+	float half_sample_rate = sample_rate / 2.f;
+
 	struct basic_vertex vertex_list[36];
 	for (int i = 0; transition_vertex_data[cube_index][i] != -1; ++i) {
 		int low_index = transition_vertex_data[cube_index][i] & 15;
 		int high_index = (transition_vertex_data[cube_index][i] >> 4) & 15;
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[low_index], grid_cell.vertices[high_index], grid_cell.values[low_index], grid_cell.values[high_index]);
-/*
-		printf("low: %d", low_index);
-		printf(" high: %d", high_index);
-		printf(" v0: %f", grid_cell.values[low_index]);
-		printf(" v1: %f", grid_cell.values[high_index]);
-		printf(" s(%f, %f, %f)", vertex.x, vertex.y, vertex.z);
-		printf(" s0(%f, %f, %f)", grid_cell.vertices[low_index].x, grid_cell.vertices[low_index].y, grid_cell.vertices[low_index].z);
-		printf(" s1(%f, %f, %f)\n", grid_cell.vertices[high_index].x, grid_cell.vertices[high_index].y, grid_cell.vertices[high_index].z);
-*/
+
 		vertex_list[i].position = vertex;
-		vertex_list[i].normal = (float3)(0.f, 1.f, 0.f);
+		vertex_list[i].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
 	}
 
 	int class_index = transition_cell_class[cube_index] & 0x7f;
-//	printf("\nclass_index: %d\n\n", class_index);
 	if (transition_cell_class[cube_index] & 0x80) {
 		for (int i = 0; transition_cell_data[class_index][i] != -1; i += 3) {
 			int index = atomic_add(vertex_count, 3);
