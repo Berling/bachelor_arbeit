@@ -30,6 +30,8 @@ namespace vbte {
 			core::engine& engine_;
 			terrain_system& terrain_system_;
 			std::vector<std::unique_ptr<terrain_cell>> cells_;
+			std::vector<size_t> sorted_cells_;
+			size_t cells_per_dimension_;
 
 		public:
 			terrain(core::engine& engine, terrain_system& terrain_system, const std::string& path);
@@ -43,7 +45,15 @@ namespace vbte {
 
 			void draw();
 			void draw_normals();
-			void update_lod_levels(const glm::vec3& position);
+			void update_lod_levels(const glm::vec3& position, bool update_geometry = true);
+
+			auto& cells() noexcept {
+				return cells_;
+			}
+
+			auto cells_per_dimension() const noexcept {
+				return cells_per_dimension_;
+			}
 		};
 	}
 }

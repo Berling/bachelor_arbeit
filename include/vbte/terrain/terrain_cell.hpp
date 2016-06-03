@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <array>
 #include <atomic>
 #include <memory>
 #include <string>
@@ -21,7 +22,14 @@ namespace vbte {
 
 	namespace terrain {
 		class volume_data;
+		class terrain;
 		class terrain_system;
+
+		struct adjacent_cell {
+			int32_t index = 0;
+			uint32_t resolution = 0;
+			uint32_t higher_resolution = false;
+		};
 	}
 }
 
@@ -30,6 +38,7 @@ namespace vbte {
 		class terrain_cell : public rendering::drawable {
 		private:
 			terrain_system& terrain_system_;
+			terrain& owner_;
 			std::shared_ptr<const class volume_data> volume_data_;
 			graphics::vertex_array vao_;
 			graphics::vertex_buffer vbo_;
@@ -50,9 +59,11 @@ namespace vbte {
 			bool build_ = true;
 			bool write_data_ = false;
 			size_t maximum_vertex_count_ = 0;
+			std::array<adjacent_cell, 6> adjacent_cells_;
+			std::unique_ptr<compute::buffer> adjacent_cells_buffer_;
 
 		public:
-			terrain_cell(core::engine& engine, terrain_system& terrain_system, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
+			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::ivec3& index, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
 			~terrain_cell() = default;
 
 			void draw() const override;
@@ -60,6 +71,10 @@ namespace vbte {
 
 			auto& volume_data() const noexcept {
 				return *volume_data_;
+			}
+
+			auto& volume_buffer() noexcept {
+				return *volume_buffer_;
 			}
 
 			auto is_empty() const noexcept {
@@ -72,10 +87,11 @@ namespace vbte {
 
 			void lod_level(int level) noexcept {
 				assert(level <= 2);
-				if (current_lod_level_ != level) {
-					build_ = true;
-				}
 				current_lod_level_ = level;
+			}
+
+			void build() noexcept {
+				build_ = true;
 			}
 
 			auto lod_level() const noexcept {
@@ -83,6 +99,12 @@ namespace vbte {
 			}
 
 			void draw_normals() const override;
+
+			auto& adjacent_cells() const noexcept {
+				return adjacent_cells_;
+			}
+
+			void update_adjacent_cells_info() noexcept;
 
 		private:
 			void marching_cubes(const class volume_data& grid, size_t resolution);

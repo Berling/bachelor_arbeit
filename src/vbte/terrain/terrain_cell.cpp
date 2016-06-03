@@ -18,6 +18,7 @@
 #include <vbte/graphics/vertex_layout.hpp>
 #include <vbte/rendering/rendering_system.hpp>
 #include <vbte/terrain/marching_cubes.hpp>
+#include <vbte/terrain/terrain.hpp>
 #include <vbte/terrain/terrain_cell.hpp>
 #include <vbte/terrain/terrain_system.hpp>
 #include <vbte/terrain/volume_data.hpp>
@@ -26,8 +27,20 @@
 
 namespace vbte {
 	namespace terrain {
-		terrain_cell::terrain_cell(core::engine& engine, terrain_system& terrain_system, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name) :
-		rendering::drawable{engine, position, rotation}, terrain_system_{terrain_system}, vbo_{GL_DYNAMIC_DRAW}, vbo2_{GL_DYNAMIC_DRAW}, vertex_count_{0}, empty_{false}, dirty_{false} {
+		terrain_cell::terrain_cell(core::engine& engine,
+		                           terrain_system& terrain_system,
+		                           terrain& owner,
+		                           const glm::ivec3& index,
+		                           const glm::vec3& position,
+		                           const glm::quat& rotation,
+		                           const std::string& file_name) : rendering::drawable{engine, position, rotation},
+		                                                           terrain_system_{terrain_system},
+		                                                           owner_{owner},
+		                                                           vbo_{GL_DYNAMIC_DRAW},
+		                                                           vbo2_{GL_DYNAMIC_DRAW},
+		                                                           vertex_count_{0},
+		                                                           empty_{false},
+		                                                           dirty_{false} {
 			volume_data_ = terrain_system_.volume_data_manager().load(file_name);
 			if (!volume_data_) {
 				throw std::runtime_error{"could not load file " + file_name};
@@ -39,10 +52,19 @@ namespace vbte {
 			}
 
 			if (!empty_) {
+				auto cells_per_dimension = owner_.cells_per_dimension();
+				adjacent_cells_[0].index = index.x == 0 ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x - 1)));
+				adjacent_cells_[1].index = index.x == (cells_per_dimension - 1) ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x + 1)));
+				adjacent_cells_[2].index = index.y == 0 ? -1 : (index.z + cells_per_dimension * ((index.y - 1) + 2 * index.x));
+				adjacent_cells_[3].index = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
+				adjacent_cells_[4].index = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
+				adjacent_cells_[5].index = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
+
 				auto& compute_context = terrain_system_.compute_context();
 				volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
 				vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, maximum_vertex_count_ * sizeof(rendering::basic_vertex));
 				vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
+				adjacent_cells_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, 6 * sizeof(adjacent_cell));
 
 				vertices_.resize(maximum_vertex_count_);
 
@@ -120,6 +142,27 @@ namespace vbte {
 				kernel.arg(3, grid.grid_length());
 				kernel.arg(4, *vertex_buffer_);
 				kernel.arg(5, *vertex_count_buffer_);
+
+				auto& cells = owner_.cells();
+				auto argument_index = 7;
+				for (auto& adjacent_cell : adjacent_cells_) {
+					if (adjacent_cell.index != - 1 && !cells[adjacent_cell.index]->is_empty()) {
+						auto& cell = *cells[adjacent_cell.index];
+						auto& data = cell.volume_data();
+						if (adjacent_cell.higher_resolution) {
+							compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
+							kernel.arg(argument_index, cell.volume_buffer());
+						} else {
+							kernel.arg(argument_index, nullptr);
+						}
+					} else {
+						kernel.arg(argument_index, nullptr);
+					}
+					++argument_index;
+				}
+
+				compute_context.enqueue_write_buffer(*adjacent_cells_buffer_, false, 6 * sizeof(adjacent_cell), adjacent_cells_.data());
+				kernel.arg(6, *adjacent_cells_buffer_);
 				auto event = compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
 				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 
@@ -137,6 +180,31 @@ namespace vbte {
 					this
 				);
 				write_data_ = true;
+			}
+		}
+
+		void terrain_cell::update_adjacent_cells_info() noexcept {
+			auto& cells = owner_.cells();
+			for (auto& adjacent_cell : adjacent_cells_) {
+				if (adjacent_cell.index != -1) {
+					auto& cell = *cells[adjacent_cell.index];
+					if (!cell.is_empty()) {
+						auto& data = cell.volume_data();
+						adjacent_cell.resolution = data.resolution() >> cell.lod_level();
+
+						if (data.resolution() >> lod_level() < adjacent_cell.resolution) {
+							if (!adjacent_cell.higher_resolution) {
+								build_ = true;
+							}
+							adjacent_cell.higher_resolution = true;
+						} else {
+							if (adjacent_cell.higher_resolution) {
+								build_ = true;
+							}
+							adjacent_cell.higher_resolution = false;
+						}
+					}
+				}
 			}
 		}
 	}
