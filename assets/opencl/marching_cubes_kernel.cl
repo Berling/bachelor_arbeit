@@ -940,28 +940,13 @@ float sample(global const float* volume, size_t resolution, float grid_length, f
 	float x0 = index_x * sample_rate;
 	float y0 = index_y * sample_rate;
 	float z0 = index_z * sample_rate;
-	float x1 = (index_x + 1) * sample_rate;
-	if (p.x >= sample_resolution * sample_rate) {
-		x1 = (index_x - 1) * sample_rate;
-	} else if (p.x <= 0.f) {
-		x1 = (index_x + 1) * sample_rate;
-	}
-	float y1 = (index_y + 1) * sample_rate;
-	if (p.y >= sample_resolution * sample_rate) {
-		y1 = (index_y - 1) * sample_rate;
-	} else if (p.y <= 0.f) {
-		y1 = (index_y + 1) * sample_rate;
-	}
-	float z1 = (index_z + 1) * sample_rate;
-	if (p.z >= sample_resolution * sample_rate) {
-		z1 = (index_z - 1) * sample_rate;
-	} else if (p.x <= 0.f) {
-		z1 = (index_z + 1) * sample_rate;
-	}
+	float x1 = (index_x == sample_resolution || index_x == 0) ? x0 : (index_x + 1) * sample_rate;
+	float y1 = (index_y == sample_resolution || index_y == 0) ? y0 : (index_y + 1) * sample_rate;
+	float z1 = (index_z == sample_resolution || index_z == 0) ? z0 : (index_z + 1) * sample_rate;
 
-	float xd = (p.x - x0) / (x1 - x0);
-	float yd = (p.y - y0) / (y1 - y0);
-	float zd = (p.z - z0) / (z1 - z0);
+	float xd = (index_x == sample_resolution || index_x == 0) ? 1.f : (p.x - x0) / (x1 - x0);
+	float yd = (index_y == sample_resolution || index_y == 0) ? 1.f : (p.y - y0) / (y1 - y0);
+	float zd = (index_z == sample_resolution || index_z == 0) ? 1.f : (p.z - z0) / (z1 - z0);
 
 	float c00 = value(volume, resolution, (size_t)(x0 / sample_rate) * scale, (size_t)(y0 / sample_rate) * scale, (size_t)(z0 / sample_rate) * scale) * (1.f - xd)
 		+ value(volume, resolution, (size_t)(x1 / sample_rate) * scale, (size_t)(y0 / sample_rate) * scale, (size_t)(z0 / sample_rate) * scale) * xd;
@@ -983,12 +968,89 @@ float3 interpolate_vertex(float isovalue, float3 p0, float3 p1, float s0, float 
 	return alpha * p1 + (1 - alpha) * p0;
 }
 
-float3 calculate_normal(global const float* volume, size_t resolution, float grid_length, float3 p, size_t sample_resolution, float step_size) {
-	float3 gradient = (float3)(
-		(sample(volume, resolution, grid_length, p + (float3)(step_size, 0.f, 0.f), sample_resolution) - sample(volume, resolution, grid_length, p - (float3)(step_size, 0.f, 0.f), sample_resolution)) / (2.f * step_size),
-		(sample(volume, resolution, grid_length, p + (float3)(0.f, step_size, 0.f), sample_resolution) - sample(volume, resolution, grid_length, p - (float3)(0.f, step_size, 0.f), sample_resolution)) / (2.f * step_size),
-		(sample(volume, resolution, grid_length, p + (float3)(0.f, 0.f, step_size), sample_resolution) - sample(volume, resolution, grid_length, p - (float3)(0.f, 0.f, step_size), sample_resolution)) / (2.f * step_size)
-	);
+float3 calculate_normal(global const float* volume,
+												size_t resolution,
+												float grid_length,
+												float3 p,
+												size_t sample_resolution,
+												float step_size,
+												global const struct adjacent_cell* adjacent_cells,
+												global const float* adjacent_cell_volumes[6]) {
+	float3 gradient = (float3)(0.f, 0.f, 0.f);
+	float sample_rate = grid_length / resolution;
+	step_size = sample_rate / 2.f;
+
+	if (p.x - step_size <= 0.f && adjacent_cells[0].index != -1) {
+		float3 offset = (float3)(step_size, 0.f, 0.f);
+		float3 adjacent_offset = (float3)(p.x - step_size, 0.f, 0.f);
+		float3 adjacent_p = (float3)(grid_length, p.y, p.z);
+		gradient.x =
+			sample(volume, resolution, grid_length, p + offset, resolution)
+			- sample(adjacent_cell_volumes[0], resolution, grid_length, adjacent_p + adjacent_offset, resolution);
+		gradient.x /= 2.f * step_size;
+	} else if (p.x + step_size >= grid_length && adjacent_cells[1].index != -1) {
+		float3 offset = (float3)(step_size, 0.f, 0.f);
+		float3 adjacent_offset = (float3)((p.x + step_size) - grid_length, 0.f, 0.f);
+		float3 adjacent_p = (float3)(0.f, p.y, p.z);
+		gradient.x =
+			sample(adjacent_cell_volumes[1], resolution, grid_length, adjacent_p + adjacent_offset, resolution)
+			- sample(volume, resolution, grid_length, p - offset, resolution);
+		gradient.x /= 2.f * step_size;
+	} else {
+		float3 offset = (float3)(step_size, 0.f, 0.f);
+		gradient.x =
+			sample(volume, resolution, grid_length, p + offset, resolution)
+			- sample(volume, resolution, grid_length, p - offset, resolution);
+		gradient.x /= 2.f * step_size;
+	}
+
+	if (p.y - step_size <= 0.f && adjacent_cells[2].index != -1) {
+		float3 offset = (float3)(0.f, step_size, 0.f);
+		float3 adjacent_offset = (float3)(0.f, p.y - step_size, 0.f);
+		float3 adjacent_p = (float3)(p.x, grid_length, p.z);
+		gradient.y =
+			sample(volume, resolution, grid_length, p + offset, resolution)
+			- sample(adjacent_cell_volumes[2], resolution, grid_length, adjacent_p + adjacent_offset, resolution);
+		gradient.y /= 2.f * step_size;
+	} else if (p.y + step_size >= grid_length && adjacent_cells[3].index != -1) {
+		float3 offset = (float3)(0.f, step_size, 0.f);
+		float3 adjacent_offset = (float3)(0.f, (p.y + step_size) - grid_length, 0.f);
+		float3 adjacent_p = (float3)(p.x, 0.f, p.z);
+		gradient.y =
+			sample(adjacent_cell_volumes[3], resolution, grid_length, adjacent_p + adjacent_offset, resolution)
+			- sample(volume, resolution, grid_length, p - offset, resolution);
+		gradient.y /= 2.f * step_size;
+	} else {
+		float3 offset = (float3)(0.f, step_size, 0.f);
+		gradient.y =
+			sample(volume, resolution, grid_length, p + offset, resolution)
+			- sample(volume, resolution, grid_length, p - offset, resolution);
+		gradient.y /= 2.f * step_size;
+	}
+
+	if (p.z - step_size <= 0.f && adjacent_cells[4].index != -1) {
+		float3 offset = (float3)(0.f, 0.f, step_size);
+		float3 adjacent_offset = (float3)(0.f, 0.f, p.z - step_size);
+		float3 adjacent_p = (float3)(p.x, p.y, grid_length);
+		gradient.z =
+			sample(volume, resolution, grid_length, p + offset, resolution)
+			- sample(adjacent_cell_volumes[4], resolution, grid_length, adjacent_p + adjacent_offset, resolution);
+		gradient.z /= 2.f * step_size;
+	} else if (p.z + step_size >= grid_length && adjacent_cells[5].index != -1) {
+		float3 offset = (float3)(0.f, 0.f, step_size);
+		float3 adjacent_offset = (float3)(0.f, 0.f, (p.z + step_size) - grid_length);
+		float3 adjacent_p = (float3)(p.x, p.y, 0.f);
+		gradient.z =
+			sample(adjacent_cell_volumes[5], resolution, grid_length, adjacent_p + adjacent_offset, resolution)
+			- sample(volume, resolution, grid_length, p - offset, resolution);
+		gradient.z /= 2.f * step_size;
+	} else {
+		float3 offset = (float3)(0.f, 0.f, step_size);
+		gradient.z =
+			sample(volume, resolution, grid_length, p + offset, resolution)
+			- sample(volume, resolution, grid_length, p - offset, resolution);
+		gradient.z /= 2.f * step_size;
+	}
 
 	return -normalize(gradient);
 }
@@ -999,7 +1061,9 @@ void generate_triangles(global const float* volume,
 												struct cell grid_cell,
 												size_t sample_resolution,
 												global struct basic_vertex* vertices,
-												global volatile int* vertex_count) {
+												global volatile int* vertex_count,
+												global const struct adjacent_cell* adjacent_cells,
+												global const float* adjacent_cell_volumes[6]) {
 	int cube_index = 0;
 	float isovalue = 0.f;
 	if (grid_cell.values[0] < isovalue) { cube_index |= 1; }
@@ -1011,7 +1075,7 @@ void generate_triangles(global const float* volume,
 	if (grid_cell.values[6] < isovalue) { cube_index |= 64; }
 	if (grid_cell.values[7] < isovalue) { cube_index |= 128; }
 
-	if (cube_index == 0) {
+	if (cube_index == 0 || cube_index == 255) {
 		return;
 	}
 
@@ -1022,62 +1086,62 @@ void generate_triangles(global const float* volume,
 	if (edge_table[cube_index] & 1) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[0], grid_cell.vertices[1], grid_cell.values[0], grid_cell.values[1]);
 		vertex_list[0].position = vertex;
-		vertex_list[0].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[0].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 2) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[1], grid_cell.vertices[2], grid_cell.values[1], grid_cell.values[2]);
 		vertex_list[1].position = vertex;
-		vertex_list[1].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[1].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 4) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[2], grid_cell.values[3], grid_cell.values[2]);
 		vertex_list[2].position = vertex;
-		vertex_list[2].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[2].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 8) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[0], grid_cell.values[3], grid_cell.values[0]);
 		vertex_list[3].position = vertex;
-		vertex_list[3].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[3].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 16) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[4], grid_cell.vertices[5], grid_cell.values[4], grid_cell.values[5]);
 		vertex_list[4].position = vertex;
-		vertex_list[4].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[4].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 32) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[5], grid_cell.vertices[6], grid_cell.values[5], grid_cell.values[6]);
 		vertex_list[5].position = vertex;
-		vertex_list[5].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[5].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 64) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[6], grid_cell.vertices[7], grid_cell.values[6], grid_cell.values[7]);
 		vertex_list[6].position = vertex;
-		vertex_list[6].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[6].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 128) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[7], grid_cell.vertices[4], grid_cell.values[7], grid_cell.values[4]);
 		vertex_list[7].position = vertex;
-		vertex_list[7].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[7].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 256) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[0], grid_cell.vertices[4], grid_cell.values[0], grid_cell.values[4]);
 		vertex_list[8].position = vertex;
-		vertex_list[8].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[8].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 512) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[1], grid_cell.vertices[5], grid_cell.values[1], grid_cell.values[5]);
 		vertex_list[9].position = vertex;
-		vertex_list[9].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[9].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 1024) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[2], grid_cell.vertices[6], grid_cell.values[2], grid_cell.values[6]);
 		vertex_list[10].position = vertex;
-		vertex_list[10].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[10].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 	if (edge_table[cube_index] & 2048) {
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[3], grid_cell.vertices[7], grid_cell.values[3], grid_cell.values[7]);
 		vertex_list[11].position = vertex;
-		vertex_list[11].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[11].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 
 	for (int i = 0; triangle_table[cube_index][i] != -1; i += 3) {
@@ -1095,8 +1159,8 @@ void generate_transition_triangles(global const float* volume,
 												size_t sample_resolution,
 												global struct basic_vertex* vertices,
 												global volatile int* vertex_count,
-												struct adjacent_cell adj_cell,
-												global const float* adj_volume) {
+												global const struct adjacent_cell* adjacent_cells,
+												global const float* adjacent_cell_volumes[6]) {
 	int cube_index = 0;
 	float isovalue = 0.f;
 	if (grid_cell.values[0] < isovalue) { cube_index += 0x01; }
@@ -1123,7 +1187,7 @@ void generate_transition_triangles(global const float* volume,
 		float3 vertex = interpolate_vertex(isovalue, grid_cell.vertices[low_index], grid_cell.vertices[high_index], grid_cell.values[low_index], grid_cell.values[high_index]);
 
 		vertex_list[i].position = vertex;
-		vertex_list[i].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate);
+		vertex_list[i].normal = calculate_normal(volume, resolution, grid_length, vertex, sample_resolution, half_sample_rate, adjacent_cells, adjacent_cell_volumes);
 	}
 
 	int class_index = transition_cell_class[cube_index] & 0x7f;
@@ -1142,29 +1206,6 @@ void generate_transition_triangles(global const float* volume,
 			vertices[index + 2] = vertex_list[transition_cell_data[class_index][i + 1]];
 		}
 	}
-
-	int indices[30] = {
-		0, 4, 3,
-		0, 1, 4,
-		1, 5, 4,
-		1, 2, 5,
-		3, 7, 6,
-		3, 4, 7,
-		4, 8, 7,
-		4, 5, 8,
-		9, 12, 11,
-		9, 10, 12
-	};
-/*
-	for (int i = 0; i < 30; i += 3) {
-		int index = atomic_add(vertex_count, 3);
-		vertices[index].position = grid_cell.vertices[indices[i]];
-		vertices[index + 1].position = grid_cell.vertices[indices[i + 1]];
-		vertices[index + 2].position = grid_cell.vertices[indices[i + 2]];
-		vertices[index].normal = (float3)(0.f, 0.f, 1.f);
-		vertices[index + 1].normal = (float3)(0.f, 0.f, 1.f);
-		vertices[index + 2].normal = (float3)(0.f, 0.f, 1.f);
-	}*/
 }
 
 kernel void marching_cubes(global const float* volume,
@@ -1183,6 +1224,16 @@ kernel void marching_cubes(global const float* volume,
 	size_t x = get_global_id(0);
 	size_t y = get_global_id(1);
 	size_t z = get_global_id(2);
+
+	global const float* adjacent_cell_volumes[6] = {
+		adjacent_volume_left,
+		adjacent_volume_right,
+		adjacent_volume_bottom,
+		adjacent_volume_top,
+		adjacent_volume_back,
+		adjacent_volume_front
+	};
+
 	if (x != 0 && x != sample_resolution - 1 && y != 0 && y != sample_resolution - 1 && z != 0 && z != sample_resolution - 1) {
 		float sample_rate = grid_length / sample_resolution;
 		float3 p = (float3)(x, y , z) * sample_rate;
@@ -1205,7 +1256,7 @@ kernel void marching_cubes(global const float* volume,
 		c.values[6] = sample(volume, resolution, grid_length, c.vertices[6], sample_resolution);
 		c.values[7] = sample(volume, resolution, grid_length, c.vertices[7], sample_resolution);
 
-		generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count);
+		generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 	} else {
 		float transition_cell_offset[6] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
 		int transition_cell_case = 0;
@@ -1261,7 +1312,7 @@ kernel void marching_cubes(global const float* volume,
 			c.values[6] = sample(volume, resolution, grid_length, c.vertices[6], sample_resolution);
 			c.values[7] = sample(volume, resolution, grid_length, c.vertices[7], sample_resolution);
 
-			generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count);
+			generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 		} else {
 			float sample_rate = grid_length / sample_resolution;
 			float3 p = (float3)(x, y , z) * sample_rate;
@@ -1293,7 +1344,7 @@ kernel void marching_cubes(global const float* volume,
 			c.vertices[6] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[5]);
 			c.vertices[7] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[5]);
 
-			generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count);
+			generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 
 			if (transition_cell_case & 1) {
 				float adjacent_cell_sample_rate = grid_length / adjacent_cells[0].resolution;
@@ -1327,7 +1378,7 @@ kernel void marching_cubes(global const float* volume,
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
 				t.values[12] = sample(volume, resolution, grid_length, t.vertices[8], sample_resolution);
 
-				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells[0], adjacent_volume_back);
+				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 			}
 
 			if (transition_cell_case & 2) {
@@ -1363,7 +1414,7 @@ kernel void marching_cubes(global const float* volume,
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
 				t.values[12] = sample(volume, resolution, grid_length, t.vertices[8], sample_resolution);
 
-				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells[1], adjacent_volume_back);
+				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 			}
 
 			if (transition_cell_case & 4) {
@@ -1398,7 +1449,7 @@ kernel void marching_cubes(global const float* volume,
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
 				t.values[12] = sample(volume, resolution, grid_length, t.vertices[8], sample_resolution);
 
-				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells[2], adjacent_volume_back);
+				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 			}
 
 			if (transition_cell_case & 8) {
@@ -1434,7 +1485,7 @@ kernel void marching_cubes(global const float* volume,
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
 				t.values[12] = sample(volume, resolution, grid_length, t.vertices[8], sample_resolution);
 
-				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells[3], adjacent_volume_back);
+				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 			}
 
 			if (transition_cell_case & 16) {
@@ -1470,7 +1521,7 @@ kernel void marching_cubes(global const float* volume,
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
 				t.values[12] = sample(volume, resolution, grid_length, t.vertices[8], sample_resolution);
 
-				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells[4], adjacent_volume_back);
+				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 			}
 
 			if (transition_cell_case & 32) {
@@ -1506,7 +1557,7 @@ kernel void marching_cubes(global const float* volume,
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
 				t.values[12] = sample(volume, resolution, grid_length, t.vertices[8], sample_resolution);
 
-				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells[5], adjacent_volume_back);
+				generate_transition_triangles(volume, resolution, grid_length, t, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 			}
 		}
 	}
