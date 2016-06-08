@@ -74,17 +74,16 @@ namespace vbte {
 			}
 
 			auto& camera = engine_.camera();
-
-			cells_[0]->lod_level(0);
-			cells_[1]->lod_level(1);
-			cells_[2]->lod_level(0);
-			cells_[3]->lod_level(0);
-			cells_[4]->lod_level(0);
-			cells_[5]->lod_level(0);
-			cells_[6]->lod_level(0);
-			cells_[7]->lod_level(0);
-
 			update_lod_levels(camera.position(), false);
+
+			cells_[0]->lod_level(1); // 0 0 0
+			cells_[1]->lod_level(0); // 0 0 1
+			cells_[2]->lod_level(1); // 0 1 0
+			cells_[3]->lod_level(0); // 0 1 1
+			cells_[4]->lod_level(1); // 1 0 0
+			cells_[5]->lod_level(0); // 1 0 1
+			cells_[6]->lod_level(1); // 1 1 0
+			cells_[7]->lod_level(0); // 1 1 1
 		}
 
 		void terrain::draw() {
@@ -99,77 +98,12 @@ namespace vbte {
 		}
 
 		void terrain::update_lod_levels(const glm::vec3& position, bool update_geometry) {
-/*			std::unordered_map<intptr_t, float> distances;
-
-			auto shortest_distance = [&](const auto& cell) {
-				std::vector<float> dists;
-				if (!cell) {
-					utils::log << "this should not be possible!" << std::endl;
-					return 0.f;
-				}
-				dists.emplace_back(glm::length2((cell->position() + cell->volume_data().grid_length() / 2.f) - position));
-				dists.emplace_back(glm::length2((cell->position()) - position));
-				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), 0.f, 0.f}) - position));
-				dists.emplace_back(glm::length2((cell->position() + glm::vec3{0.f, cell->volume_data().grid_length(), 0.f}) - position));
-				dists.emplace_back(glm::length2((cell->position() + glm::vec3{0.f, 0.f, cell->volume_data().grid_length()}) - position));
-				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), cell->volume_data().grid_length(), 0.f}) - position));
-				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), 0.f, cell->volume_data().grid_length()}) - position));
-				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), cell->volume_data().grid_length(), 0.f}) - position));
-				dists.emplace_back(glm::length2((cell->position() + glm::vec3{cell->volume_data().grid_length(), cell->volume_data().grid_length(), cell->volume_data().grid_length()}) - position));
-				std::sort(dists.begin(), dists.end());
-
-				if (distances.find(reinterpret_cast<intptr_t>(cell.get())) == distances.end()) {
-					distances[reinterpret_cast<intptr_t>(cell.get())] = dists.front();
-				}
-
-				return dists.front();
-			};
-
-			auto comperator = [&](const auto& first, const auto& second) {
-				return shortest_distance(cells_[first]) <= shortest_distance(cells_[second]);
-			};
-
-			std::sort(sorted_cells_.begin(), sorted_cells_.end(), comperator);
-
-			std::unordered_map<intptr_t, bool> vistied_cells;
-
-			const auto magic_distance = 400.f;
-			const auto magic_distance2 = 1000.f;
-			for (auto& cell_index : sorted_cells_) {
-				auto& cell = cells_[cell_index];
-				auto current_lod_level = cell->lod_level();
-				auto key = reinterpret_cast<intptr_t>(cell.get());
-				vistied_cells[key] = true;
-				if (distances[key] > magic_distance2) {
-					cell->lod_level(2);
-				} else if (distances[key] > magic_distance) {
-					cell->lod_level(1);
-				} else {
-					cell->lod_level(0);
-				}
-
-				for (auto& adjacent_cell_info : cell->adjacent_cells()) {
-					if (adjacent_cell_info.index != -1 &&  !cells_[adjacent_cell_info.index]->is_empty()) {
-						auto& adjacent_cell = cells_[adjacent_cell_info.index];
-						auto adjacent_cell_key = reinterpret_cast<intptr_t>(adjacent_cell.get());
-						if (vistied_cells.find(adjacent_cell_key) != vistied_cells.end() && vistied_cells[adjacent_cell_key]) {
-							auto adjacent_cell_lod_level = adjacent_cell->lod_level();
-							auto lod_level = cell->lod_level();
-							if ((lod_level == 0 && adjacent_cell_lod_level == 2) || (lod_level == 2 && adjacent_cell_lod_level == 0)) {
-								cell->lod_level(1);
-							}
-						}
-					}
-				}
-
-				if (current_lod_level != cell->lod_level()) {
-					cell->build();
-				}
-			}*/
+			for (auto& cell: cells_) {
+				cell->update_adjacent_cells_info();
+			}
 
 			for (auto& cell: cells_) {
 				auto resolution = cell->volume_data().resolution();
-				cell->update_adjacent_cells_info();
 				if (update_geometry) {
 					cell->update_geometry(resolution >> cell->lod_level());
 				}

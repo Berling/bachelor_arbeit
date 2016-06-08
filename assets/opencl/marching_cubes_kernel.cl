@@ -1486,7 +1486,7 @@ kernel void marching_cubes(global const float* volume,
 				t.vertices[5] = p_off + (float3)(0.f, adjacent_cell_sample_rate, 0.f);
 				t.vertices[6] = p_off + (float3)(2.f * adjacent_cell_sample_rate, 2.f * adjacent_cell_sample_rate, 0.f);
 				t.vertices[7] = p_off + (float3)(adjacent_cell_sample_rate, 2.f * adjacent_cell_sample_rate, 0.f);
-				t.vertices[8] = p_off + (float3)(0.f, adjacent_cell_sample_rate, 0.f);
+				t.vertices[8] = p_off + (float3)(0.f, 2.f * adjacent_cell_sample_rate, 0.f);
 				t.vertices[9] = p_off + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[5]);
 				t.vertices[10] = p_off + (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[5]);
 				t.vertices[11] = p_off + (float3)(sample_rate + transition_cell_offset[1], sample_rate + transition_cell_offset[3], transition_cell_offset[5]);

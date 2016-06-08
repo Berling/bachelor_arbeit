@@ -23,7 +23,7 @@ namespace vbte {
 				error = program.build({device});
 				kernel_ = cl::Kernel{program, name.c_str()};
 			} catch (const cl::Error& ex) {
-				if (error != CL_SUCCESS) {
+				if (ex.err() == -11) {
 					utils::log(utils::log_level::error) << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device) << std::endl;
 					utils::log(utils::log_level::error) << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(device) << std::endl;
 					utils::log(utils::log_level::error) << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;

@@ -22,6 +22,9 @@ workspace "bachelor_arbeit"
 		optimize "Full"
 
 	configuration {"gmake", "linux"}
+		libdirs {
+			"$(AMDAPPSDKROOT)/lib/x86_x64/sdk/lib"
+		}
 
 	configuration {"gmake", "windows"}
 		libdirs {
