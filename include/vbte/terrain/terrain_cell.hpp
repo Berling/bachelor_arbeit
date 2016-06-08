@@ -98,6 +98,8 @@ namespace vbte {
 				return current_lod_level_;
 			}
 
+			void draw_normals() const override;
+
 			auto& adjacent_cells() const noexcept {
 				return adjacent_cells_;
 			}

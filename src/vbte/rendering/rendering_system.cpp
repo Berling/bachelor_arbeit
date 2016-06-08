@@ -125,7 +125,7 @@ namespace vbte {
 					light_program_.uniform("mit", false, glm::inverseTranspose(geometry->transform()));
 					light_program_.uniform("view_vector", camera.position());
 					light_program_.uniform("color", debug_face_color_);
-					light_program_.uniform("light_direction", glm::vec3{0.f, 1.f, 0.f});
+					light_program_.uniform("light_direction", glm::vec3{-1.f, 1.f, -1.f});
 					light_program_.uniform("light_color", glm::vec3{1.f});
 					light_program_.uniform("light_energy", 1.0f);
 					light_program_.uniform("color", debug_face_color_);
@@ -158,7 +158,7 @@ namespace vbte {
 				light_program_.uniform("view", false, camera.view());
 				light_program_.uniform("view_vector", camera.position());
 				light_program_.uniform("color", debug_face_color_);
-				light_program_.uniform("light_direction", glm::vec3{0.f, 1.f, 0.f});
+				light_program_.uniform("light_direction", glm::vec3{-1.f, 1.f, -1.f});
 				light_program_.uniform("light_color", glm::vec3{1.f});
 				light_program_.uniform("light_energy", 1.0f);
 
@@ -170,6 +170,12 @@ namespace vbte {
 				}
 
 				glDisable(GL_CULL_FACE);
+			}
+
+			if (draw_normals_) {
+				for (auto& geometry : draw_queue_) {
+					geometry->draw_normals();
+				}
 			}
 
 			static bounding_box bb{engine_};

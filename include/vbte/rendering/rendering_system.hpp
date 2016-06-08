@@ -47,6 +47,7 @@ namespace vbte {
 			std::vector<bounding_box_uniforms> bounding_box_draw_queue_;
 			graphics::program skydome_program_;
 			graphics::vertex_layout layout_;
+			bool draw_normals_ = false;
 
 		public:
 			rendering_system(core::engine& engine);
@@ -74,6 +75,10 @@ namespace vbte {
 
 			auto& skydome_program() noexcept {
 				return skydome_program_;
+			}
+
+			void toggle_normals() noexcept {
+				draw_normals_ = !draw_normals_;
 			}
 
 			void draw(drawable* geometry);

@@ -152,6 +152,9 @@ namespace vbte {
 							case SDL_SCANCODE_4:
 								rendering_system_->change_mode(rendering::rendering_mode::wireframe);
 								break;
+							case SDL_SCANCODE_N:
+								rendering_system_->toggle_normals();
+								break;
 							default:
 								break;
 						}

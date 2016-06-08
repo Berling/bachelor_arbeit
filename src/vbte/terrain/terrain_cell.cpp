@@ -12,6 +12,7 @@
 
 #include <vbte/asset/asset.hpp>
 #include <vbte/asset/asset_manager.hpp>
+#include <vbte/core/camera.hpp>
 #include <vbte/core/engine.hpp>
 #include <vbte/graphics/transform_feedback_buffer.hpp>
 #include <vbte/graphics/vertex_layout.hpp>
@@ -82,6 +83,24 @@ namespace vbte {
 			}
 		}
 
+		void terrain_cell::draw_normals() const {
+			static auto& normal_program = terrain_system_.normal_program();
+			static auto& camera = engine_.camera();
+			normal_program.use();
+			normal_program.uniform("model", false, transform());
+			normal_program.uniform("view", false, camera.view());
+			normal_program.uniform("projection", false, camera.projection());
+			normal_program.uniform("normal_length", 0.3f);
+			normal_program.uniform("color", glm::vec4{0.f, 0.f, 1.f, 1.f});
+			if (front_) {
+				vao_.bind();
+				glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
+			} else {
+				vao2_.bind();
+				glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
+			}
+		}
+
 		void terrain_cell::update_geometry(size_t resolution) {
 			if (build_) {
 				this->marching_cubes(*volume_data_, resolution);
@@ -130,12 +149,8 @@ namespace vbte {
 					if (adjacent_cell.index != - 1 && !cells[adjacent_cell.index]->is_empty()) {
 						auto& cell = *cells[adjacent_cell.index];
 						auto& data = cell.volume_data();
-						if (adjacent_cell.higher_resolution) {
-							compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
-							kernel.arg(argument_index, cell.volume_buffer());
-						} else {
-							kernel.arg(argument_index, nullptr);
-						}
+						compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
+						kernel.arg(argument_index, cell.volume_buffer());
 					} else {
 						kernel.arg(argument_index, nullptr);
 					}

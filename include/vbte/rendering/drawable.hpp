@@ -30,6 +30,7 @@ namespace vbte {
 			drawable& operator=(drawable&&) = default;
 
 			virtual void draw() const = 0;
+			virtual void draw_normals() const {}
 
 			auto& position() const noexcept {
 				return position_;
