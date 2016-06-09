@@ -75,15 +75,6 @@ namespace vbte {
 
 			auto& camera = engine_.camera();
 			update_lod_levels(camera.position(), false);
-
-			cells_[0]->lod_level(0); // 0 0 0
-			cells_[1]->lod_level(1); // 0 0 1
-			cells_[2]->lod_level(0); // 0 1 0
-			cells_[3]->lod_level(0); // 0 1 1
-			cells_[4]->lod_level(1); // 1 0 0
-			cells_[5]->lod_level(0); // 1 0 1
-			cells_[6]->lod_level(0); // 1 1 0
-			cells_[7]->lod_level(1); // 1 1 1
 		}
 
 		void terrain::draw(bool with_bounding_box) {
@@ -100,11 +91,37 @@ namespace vbte {
 		}
 
 		void terrain::update_lod_levels(const glm::vec3& position, bool update_geometry) {
-			for (auto& cell: cells_) {
+			static auto& camera = engine_.camera();
+
+			const auto magic_size_1 = 1.f;
+			const auto magic_size_2 = 0.8f;
+
+			for (auto& cell : cells_) {
+				auto center = cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f};
+				auto half_extend = glm::vec3{cell->volume_data().grid_length() / 2.f};
+				auto radius = glm::vec3{glm::length(half_extend), 0.f, 0.f};
+				auto center_view = camera.view() * glm::vec4{center, 1.f};
+				auto radius_view = center_view + glm::vec4{radius, 0.f};
+				auto center_projected = camera.projection() * glm::vec4{center_view.x, center_view.y, center_view.z, 1.f};
+				center_projected /= center_projected.w;
+				auto radius_projected = camera.projection() * glm::vec4{radius_view.x, radius_view.y, radius_view.z, 1.f};
+				radius_projected /= radius_projected.w;
+				auto projected_size = glm::length(center_projected - radius_projected);
+
+				if (projected_size > magic_size_1) {
+					cell->lod_level(0);
+				} else if (projected_size > magic_size_2) {
+					cell->lod_level(1);
+				} else {
+					cell->lod_level(2);
+				}
+			}
+
+			for (auto& cell : cells_) {
 				cell->update_adjacent_cells_info();
 			}
 
-			for (auto& cell: cells_) {
+			for (auto& cell : cells_) {
 				auto resolution = cell->volume_data().resolution();
 				if (update_geometry) {
 					cell->update_geometry(resolution >> cell->lod_level());

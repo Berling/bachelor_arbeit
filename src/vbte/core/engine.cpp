@@ -73,7 +73,7 @@ namespace vbte {
 
 			graphics_system_->begin();
 			rendering_system_->update(delta_time);
-			s.draw();
+			//s.draw();
 			graphics_system_->end(delta_time);
 		}
 
