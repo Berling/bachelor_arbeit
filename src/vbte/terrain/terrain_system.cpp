@@ -54,7 +54,7 @@ namespace vbte {
 		void terrain_system::update(float delta_time) {
 			auto& camera = engine_.camera();
 			terrain_->update_lod_levels(camera.position());
-			terrain_->draw();
+			terrain_->draw(draw_bounding_boxes_);
 		}
 
 		void terrain_system::init_marching_cubes_program(graphics::shader_manager& shader_manager) {

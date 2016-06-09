@@ -86,14 +86,16 @@ namespace vbte {
 			cells_[7]->lod_level(1); // 1 1 1
 		}
 
-		void terrain::draw() {
+		void terrain::draw(bool with_bounding_box) {
 			static auto& rendering_system = engine_.rendering_system();
 
 			for (auto& cell : cells_) {
 				if (!cell->is_empty()) {
 					rendering_system.draw(cell.get());
 				}
-				rendering_system.draw_bounding_box(glm::vec3{cell->volume_data().grid_length() / 2.f}, cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f}, glm::angleAxis(0.f, glm::vec3{0.f}));
+				if (with_bounding_box) {
+					rendering_system.draw_bounding_box(glm::vec3{cell->volume_data().grid_length() / 2.f}, cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f}, glm::angleAxis(0.f, glm::vec3{0.f}));
+				}
 			}
 		}
 

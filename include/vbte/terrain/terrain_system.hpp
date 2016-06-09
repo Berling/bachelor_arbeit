@@ -41,6 +41,7 @@ namespace vbte {
 			std::shared_ptr<compute::kernel> marching_cubes_kernel_;
 			std::unique_ptr<class terrain> terrain_;
 			graphics::program normal_program_;
+			bool draw_bounding_boxes_ = false;
 
 		public:
 			terrain_system(core::engine& engine);
@@ -84,6 +85,10 @@ namespace vbte {
 
 			auto& normal_program() noexcept {
 				return normal_program_;
+			}
+
+			void toggle_bounding_boxes() {
+				draw_bounding_boxes_ = !draw_bounding_boxes_;
 			}
 
 		private:

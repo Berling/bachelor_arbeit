@@ -155,6 +155,8 @@ namespace vbte {
 							case SDL_SCANCODE_N:
 								rendering_system_->toggle_normals();
 								break;
+							case SDL_SCANCODE_B:
+								terrain_system_->toggle_bounding_boxes();
 							default:
 								break;
 						}

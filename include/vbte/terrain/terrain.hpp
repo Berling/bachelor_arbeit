@@ -43,7 +43,7 @@ namespace vbte {
 			terrain(terrain&&) = default;
 			terrain& operator=(terrain&&) = default;
 
-			void draw();
+			void draw(bool with_bounding_box = false);
 			void draw_normals();
 			void update_lod_levels(const glm::vec3& position, bool update_geometry = true);
 
