@@ -1290,6 +1290,57 @@ kernel void marching_cubes(global const float* volume,
 			float adjacent_cell_sample_rate = grid_length / adjacent_cells[5].resolution;
 			transition_cell_offset[5] = -adjacent_cell_sample_rate / 2.f;
 		}
+
+		bool use_offset[8] = {true, true, true, true, true, true, true, true};
+		if (x == 0 && z == 0) {
+			use_offset[0] = false;
+			use_offset[4] = false;
+		}
+		if (x == sample_resolution - 1 && z == 0) {
+			use_offset[1] = false;
+			use_offset[5] = false;
+		}
+		if (x == sample_resolution - 1 && z == sample_resolution - 1) {
+			use_offset[2] = false;
+			use_offset[6] = false;
+		}
+		if (x == 0 && z == sample_resolution - 1) {
+			use_offset[3] = false;
+			use_offset[7] = false;
+		}
+		if (y == 0 && z == 0) {
+			use_offset[0] = false;
+			use_offset[1] = false;
+		}
+		if (x == sample_resolution - 1 && y == 0) {
+			use_offset[1] = false;
+			use_offset[2] = false;
+		}
+		if (y == 0 && z == sample_resolution - 1) {
+			use_offset[2] = false;
+			use_offset[3] = false;
+		}
+		if (x == 0 && y == 0) {
+			use_offset[3] = false;
+			use_offset[0] = false;
+		}
+		if (y == sample_resolution - 1 && z == 0) {
+			use_offset[4] = false;
+			use_offset[5] = false;
+		}
+		if (x == sample_resolution - 1 && y == sample_resolution - 1) {
+			use_offset[5] = false;
+			use_offset[6] = false;
+		}
+		if (y == sample_resolution - 1 && z == sample_resolution - 1) {
+			use_offset[6] = false;
+			use_offset[7] = false;
+		}
+		if (x == 0 && y == sample_resolution - 1) {
+			use_offset[7] = false;
+			use_offset[4] = false;
+		}
+
 		if (transition_cell_case == 0) {
 			float sample_rate = grid_length / sample_resolution;
 			float3 p = (float3)(x, y , z) * sample_rate;
@@ -1312,7 +1363,7 @@ kernel void marching_cubes(global const float* volume,
 			c.values[6] = sample(volume, resolution, grid_length, c.vertices[6], sample_resolution);
 			c.values[7] = sample(volume, resolution, grid_length, c.vertices[7], sample_resolution);
 
-			generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
+			generate_triangles(volume, resolution, grid_length, c, resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 		} else {
 			float sample_rate = grid_length / sample_resolution;
 			float3 p = (float3)(x, y , z) * sample_rate;
@@ -1335,14 +1386,30 @@ kernel void marching_cubes(global const float* volume,
 			c.values[6] = sample(volume, resolution, grid_length, c.vertices[6], sample_resolution);
 			c.values[7] = sample(volume, resolution, grid_length, c.vertices[7], sample_resolution);
 
-			c.vertices[0] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
-			c.vertices[1] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
-			c.vertices[2] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[5]);
-			c.vertices[3] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[5]);
-			c.vertices[4] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[4]);
-			c.vertices[5] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[4]);
-			c.vertices[6] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[5]);
-			c.vertices[7] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[5]);
+			if (use_offset[0]) {
+				c.vertices[0] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
+			}
+			if (use_offset[1]) {
+				c.vertices[1] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
+			}
+			if (use_offset[2]) {
+				c.vertices[2] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[5]);
+			}
+			if (use_offset[3]) {
+				c.vertices[3] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[5]);
+			}
+			if (use_offset[4]) {
+				c.vertices[4] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[4]);
+			}
+			if (use_offset[5]) {
+				c.vertices[5] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[4]);
+			}
+			if (use_offset[6]) {
+				c.vertices[6] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[5]);
+			}
+			if (use_offset[7]) {
+				c.vertices[7] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[5]);
+			}
 
 			generate_triangles(volume, resolution, grid_length, c, sample_resolution, vertices, vertex_count, adjacent_cells, adjacent_cell_volumes);
 
@@ -1359,20 +1426,32 @@ kernel void marching_cubes(global const float* volume,
 				t.vertices[6] = p + (float3)(0.f, 2.f * adjacent_cell_sample_rate, 2.f * adjacent_cell_sample_rate);
 				t.vertices[7] = p + (float3)(0.f, 2.f * adjacent_cell_sample_rate, adjacent_cell_sample_rate);
 				t.vertices[8] = p + (float3)(0.f, 2.f * adjacent_cell_sample_rate, 0.f);
-				t.vertices[9] = p + (float3)(transition_cell_offset[0], transition_cell_offset[2], sample_rate + transition_cell_offset[5]);
-				t.vertices[10] = p + (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
-				t.vertices[11] = p + (float3)(transition_cell_offset[0], sample_rate + transition_cell_offset[3], sample_rate + transition_cell_offset[5]);
-				t.vertices[12] = p + (float3)(transition_cell_offset[0], sample_rate + transition_cell_offset[3], transition_cell_offset[4]);
+				t.vertices[9] = p + (float3)(0.f, 0.f, sample_rate);
+				t.vertices[10] = p;
+				t.vertices[11] = p + (float3)(0.f, sample_rate, sample_rate);
+				t.vertices[12] = p + (float3)(0.f, sample_rate, 0.f);
+				if (use_offset[3]) {
+					t.vertices[9] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[5]);
+				}
+				if (use_offset[0]) {
+					t.vertices[10] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
+				}
+				if (use_offset[7]) {
+					t.vertices[11] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[5]);
+				}
+				if (use_offset[4]) {
+					t.vertices[12] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[4]);
+				}
 
-				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], adjacent_cells[0].resolution);
-				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], adjacent_cells[0].resolution);
-				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], adjacent_cells[0].resolution);
-				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], adjacent_cells[0].resolution);
-				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], adjacent_cells[0].resolution);
-				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], adjacent_cells[0].resolution);
-				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], adjacent_cells[0].resolution);
-				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], adjacent_cells[0].resolution);
-				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], adjacent_cells[0].resolution);
+				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], resolution);
+				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], resolution);
+				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], resolution);
+				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], resolution);
+				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], resolution);
+				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], resolution);
+				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], resolution);
+				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], resolution);
+				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], resolution);
 				t.values[9] = sample(volume, resolution, grid_length, t.vertices[0], sample_resolution);
 				t.values[10] = sample(volume, resolution, grid_length, t.vertices[2], sample_resolution);
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
@@ -1395,20 +1474,32 @@ kernel void marching_cubes(global const float* volume,
 				t.vertices[6] = p_off + (float3)(0.f, 2.f * adjacent_cell_sample_rate, 0.f);
 				t.vertices[7] = p_off + (float3)(0.f, 2.f * adjacent_cell_sample_rate, adjacent_cell_sample_rate);
 				t.vertices[8] = p_off + (float3)(0.f, 2.f * adjacent_cell_sample_rate, 2.f * adjacent_cell_sample_rate);
-				t.vertices[9] = p_off + (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
-				t.vertices[10] = p_off + (float3)(transition_cell_offset[1], transition_cell_offset[2], sample_rate + transition_cell_offset[5]);
-				t.vertices[11] = p_off + (float3)(transition_cell_offset[1], sample_rate + transition_cell_offset[3], transition_cell_offset[4]);
-				t.vertices[12] = p_off + (float3)(transition_cell_offset[1], sample_rate + transition_cell_offset[3], sample_rate + transition_cell_offset[5]);
+				t.vertices[9] = p_off;
+				t.vertices[10] = p_off + (float3)(0.f, 0.f, sample_rate);
+				t.vertices[11] = p_off + (float3)(0.f, sample_rate, 0.f);
+				t.vertices[12] = p_off + (float3)(0.f, sample_rate, sample_rate);
+				if (use_offset[1]) {
+					t.vertices[9] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
+				}
+				if (use_offset[2]) {
+					t.vertices[10] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[5]);
+				}
+				if (use_offset[5]) {
+					t.vertices[11] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[4]);
+				}
+				if (use_offset[6]) {
+					t.vertices[12] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[5]);
+				}
 
-				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], adjacent_cells[1].resolution);
-				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], adjacent_cells[1].resolution);
-				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], adjacent_cells[1].resolution);
-				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], adjacent_cells[1].resolution);
-				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], adjacent_cells[1].resolution);
-				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], adjacent_cells[1].resolution);
-				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], adjacent_cells[1].resolution);
-				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], adjacent_cells[1].resolution);
-				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], adjacent_cells[1].resolution);
+				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], resolution);
+				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], resolution);
+				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], resolution);
+				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], resolution);
+				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], resolution);
+				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], resolution);
+				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], resolution);
+				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], resolution);
+				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], resolution);
 				t.values[9] = sample(volume, resolution, grid_length, t.vertices[0], sample_resolution);
 				t.values[10] = sample(volume, resolution, grid_length, t.vertices[2], sample_resolution);
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
@@ -1430,20 +1521,32 @@ kernel void marching_cubes(global const float* volume,
 				t.vertices[6] = p + (float3)(2.f * adjacent_cell_sample_rate, 0.f, 2.f * adjacent_cell_sample_rate);
 				t.vertices[7] = p + (float3)(adjacent_cell_sample_rate, 0.f, 2.f * adjacent_cell_sample_rate);
 				t.vertices[8] = p + (float3)(0.f, 0.f, 2.f * adjacent_cell_sample_rate);
-				t.vertices[9] = p + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
-				t.vertices[10] = p + (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
-				t.vertices[11] = p + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[2], sample_rate + transition_cell_offset[5]);
-				t.vertices[12] = p + (float3)(transition_cell_offset[0], transition_cell_offset[2], sample_rate + transition_cell_offset[5]);
+				t.vertices[9] = p + (float3)(sample_rate, 0.f, 0.f);
+				t.vertices[10] = p;
+				t.vertices[11] = p + (float3)(sample_rate, 0.f, sample_rate);
+				t.vertices[12] = p + (float3)(0.f, 0.f, sample_rate);
+				if (use_offset[1]) {
+					t.vertices[9] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
+				}
+				if (use_offset[0]) {
+					t.vertices[10] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
+				}
+				if (use_offset[2]) {
+					t.vertices[11] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[5]);
+				}
+				if (use_offset[3]) {
+					t.vertices[12] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[5]);
+				}
 
-				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], adjacent_cells[2].resolution);
-				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], adjacent_cells[2].resolution);
-				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], adjacent_cells[2].resolution);
-				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], adjacent_cells[2].resolution);
-				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], adjacent_cells[2].resolution);
-				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], adjacent_cells[2].resolution);
-				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], adjacent_cells[2].resolution);
-				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], adjacent_cells[2].resolution);
-				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], adjacent_cells[2].resolution);
+				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], resolution);
+				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], resolution);
+				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], resolution);
+				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], resolution);
+				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], resolution);
+				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], resolution);
+				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], resolution);
+				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], resolution);
+				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], resolution);
 				t.values[9] = sample(volume, resolution, grid_length, t.vertices[0], sample_resolution);
 				t.values[10] = sample(volume, resolution, grid_length, t.vertices[2], sample_resolution);
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
@@ -1466,20 +1569,32 @@ kernel void marching_cubes(global const float* volume,
 				t.vertices[6] = p_off + (float3)(0.f, 0.f, 2.f * adjacent_cell_sample_rate);
 				t.vertices[7] = p_off + (float3)(adjacent_cell_sample_rate, 0.f, 2.f * adjacent_cell_sample_rate);
 				t.vertices[8] = p_off + (float3)(2.f * adjacent_cell_sample_rate, 0.f, 2.f * adjacent_cell_sample_rate);
-				t.vertices[9] = p_off + (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[4]);
-				t.vertices[10] = p_off + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[4]);
-				t.vertices[11] = p_off + (float3)(transition_cell_offset[0], transition_cell_offset[3], sample_rate + transition_cell_offset[5]);
-				t.vertices[12] = p_off + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[3], sample_rate + transition_cell_offset[5]);
+				t.vertices[9] = p_off;
+				t.vertices[10] = p_off + (float3)(sample_rate, 0.f, 0.f);
+				t.vertices[11] = p_off + (float3)(0.f, 0.f, sample_rate);
+				t.vertices[12] = p_off + (float3)(sample_rate, 0.f, sample_rate);
+				if (use_offset[4]) {
+					t.vertices[9] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[4]);
+				}
+				if (use_offset[5]) {
+					t.vertices[10] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[4]);
+				}
+				if (use_offset[7]) {
+					t.vertices[11] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[5]);
+				}
+				if (use_offset[6]) {
+					t.vertices[12] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[5]);
+				}
 
-				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], adjacent_cells[3].resolution);
-				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], adjacent_cells[3].resolution);
-				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], adjacent_cells[3].resolution);
-				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], adjacent_cells[3].resolution);
-				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], adjacent_cells[3].resolution);
-				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], adjacent_cells[3].resolution);
-				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], adjacent_cells[3].resolution);
-				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], adjacent_cells[3].resolution);
-				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], adjacent_cells[3].resolution);
+				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], resolution);
+				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], resolution);
+				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], resolution);
+				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], resolution);
+				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], resolution);
+				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], resolution);
+				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], resolution);
+				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], resolution);
+				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], resolution);
 				t.values[9] = sample(volume, resolution, grid_length, t.vertices[0], sample_resolution);
 				t.values[10] = sample(volume, resolution, grid_length, t.vertices[2], sample_resolution);
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
@@ -1501,21 +1616,33 @@ kernel void marching_cubes(global const float* volume,
 				t.vertices[6] = p + (float3)(0.f, 2.f * adjacent_cell_sample_rate, 0.f);
 				t.vertices[7] = p + (float3)(adjacent_cell_sample_rate, 2.f * adjacent_cell_sample_rate, 0.f);
 				t.vertices[8] = p + (float3)(2.f * adjacent_cell_sample_rate, 2.f * adjacent_cell_sample_rate, 0.f);
-				t.vertices[9] = p + (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
-				t.vertices[10] = p + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
-				t.vertices[11] = p + (float3)(transition_cell_offset[0], sample_rate + transition_cell_offset[3], transition_cell_offset[4]);
-				// + 0.f is a bug fix. Without this expression the following line causes the program to crash or the driver to reject kernel execution.
-				t.vertices[12] = p + (float3)(sample_rate + transition_cell_offset[1] + 0.f, sample_rate + transition_cell_offset[3] + 0.f, transition_cell_offset[4]);
+				t.vertices[9] = p;
+				t.vertices[10] = p + (float3)(sample_rate, 0.f, 0.f);
+				t.vertices[11] = p + (float3)(0.f, sample_rate, 0.f);
+				t.vertices[12] = p + (float3)(sample_rate, sample_rate, 0.f);
+				if (use_offset[0]) {
+					t.vertices[9] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[4]);
+				}
+				if (use_offset[1]) {
+					t.vertices[10] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[4]);
+				}
+				if (use_offset[4]) {
+					t.vertices[11] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[4]);
+				}
+				if (use_offset[5]) {
+					// + 0.f is a bug fix. Without this expression the following line causes the program to crash or the driver to reject kernel execution.
+					t.vertices[12] += (float3)(transition_cell_offset[1] + 0.f, transition_cell_offset[3] + 0.f, transition_cell_offset[4]);
+				}
 
-				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], adjacent_cells[4].resolution);
-				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], adjacent_cells[4].resolution);
-				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], adjacent_cells[4].resolution);
-				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], adjacent_cells[4].resolution);
-				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], adjacent_cells[4].resolution);
-				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], adjacent_cells[4].resolution);
-				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], adjacent_cells[4].resolution);
-				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], adjacent_cells[4].resolution);
-				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], adjacent_cells[4].resolution);
+				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], resolution);
+				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], resolution);
+				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], resolution);
+				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], resolution);
+				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], resolution);
+				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], resolution);
+				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], resolution);
+				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], resolution);
+				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], resolution);
 				t.values[9] = sample(volume, resolution, grid_length, t.vertices[0], sample_resolution);
 				t.values[10] = sample(volume, resolution, grid_length, t.vertices[2], sample_resolution);
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);
@@ -1538,20 +1665,32 @@ kernel void marching_cubes(global const float* volume,
 				t.vertices[6] = p_off + (float3)(2.f * adjacent_cell_sample_rate, 2.f * adjacent_cell_sample_rate, 0.f);
 				t.vertices[7] = p_off + (float3)(adjacent_cell_sample_rate, 2.f * adjacent_cell_sample_rate, 0.f);
 				t.vertices[8] = p_off + (float3)(0.f, 2.f * adjacent_cell_sample_rate, 0.f);
-				t.vertices[9] = p_off + (float3)(sample_rate + transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[5]);
-				t.vertices[10] = p_off + (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[5]);
-				t.vertices[11] = p_off + (float3)(sample_rate + transition_cell_offset[1], sample_rate + transition_cell_offset[3], transition_cell_offset[5]);
-				t.vertices[12] = p_off + (float3)(transition_cell_offset[0], sample_rate + transition_cell_offset[3], transition_cell_offset[5]);
+				t.vertices[9] = p_off + (float3)(sample_rate, 0.f, 0.f);
+				t.vertices[10] = p_off;
+				t.vertices[11] = p_off + (float3)(sample_rate, sample_rate, 0.f);
+				t.vertices[12] = p_off + (float3)(0.f, sample_rate, 0.f);
+				if (use_offset[2]) {
+					t.vertices[9] += (float3)(transition_cell_offset[1], transition_cell_offset[2], transition_cell_offset[5]);
+				}
+				if (use_offset[3]) {
+					t.vertices[10] += (float3)(transition_cell_offset[0], transition_cell_offset[2], transition_cell_offset[5]);
+				}
+				if (use_offset[6]) {
+					t.vertices[11] += (float3)(transition_cell_offset[1], transition_cell_offset[3], transition_cell_offset[5]);
+				}
+				if (use_offset[7]) {
+					t.vertices[12] += (float3)(transition_cell_offset[0], transition_cell_offset[3], transition_cell_offset[5]);
+				}
 
-				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], adjacent_cells[5].resolution);
-				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], adjacent_cells[5].resolution);
-				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], adjacent_cells[5].resolution);
-				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], adjacent_cells[5].resolution);
-				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], adjacent_cells[5].resolution);
-				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], adjacent_cells[5].resolution);
-				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], adjacent_cells[5].resolution);
-				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], adjacent_cells[5].resolution);
-				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], adjacent_cells[5].resolution);
+				t.values[0] = sample(volume, resolution, grid_length, t.vertices[0], resolution);
+				t.values[1] = sample(volume, resolution, grid_length, t.vertices[1], resolution);
+				t.values[2] = sample(volume, resolution, grid_length, t.vertices[2], resolution);
+				t.values[3] = sample(volume, resolution, grid_length, t.vertices[3], resolution);
+				t.values[4] = sample(volume, resolution, grid_length, t.vertices[4], resolution);
+				t.values[5] = sample(volume, resolution, grid_length, t.vertices[5], resolution);
+				t.values[6] = sample(volume, resolution, grid_length, t.vertices[6], resolution);
+				t.values[7] = sample(volume, resolution, grid_length, t.vertices[7], resolution);
+				t.values[8] = sample(volume, resolution, grid_length, t.vertices[8], resolution);
 				t.values[9] = sample(volume, resolution, grid_length, t.vertices[0], sample_resolution);
 				t.values[10] = sample(volume, resolution, grid_length, t.vertices[2], sample_resolution);
 				t.values[11] = sample(volume, resolution, grid_length, t.vertices[6], sample_resolution);

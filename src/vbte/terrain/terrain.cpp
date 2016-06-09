@@ -76,14 +76,14 @@ namespace vbte {
 			auto& camera = engine_.camera();
 			update_lod_levels(camera.position(), false);
 
-			cells_[0]->lod_level(1); // 0 0 0
-			cells_[1]->lod_level(0); // 0 0 1
-			cells_[2]->lod_level(1); // 0 1 0
+			cells_[0]->lod_level(0); // 0 0 0
+			cells_[1]->lod_level(1); // 0 0 1
+			cells_[2]->lod_level(0); // 0 1 0
 			cells_[3]->lod_level(0); // 0 1 1
 			cells_[4]->lod_level(1); // 1 0 0
 			cells_[5]->lod_level(0); // 1 0 1
-			cells_[6]->lod_level(1); // 1 1 0
-			cells_[7]->lod_level(0); // 1 1 1
+			cells_[6]->lod_level(0); // 1 1 0
+			cells_[7]->lod_level(1); // 1 1 1
 		}
 
 		void terrain::draw() {
