@@ -96,24 +96,69 @@ namespace vbte {
 			const auto magic_size_1 = 1.f;
 			const auto magic_size_2 = 0.8f;
 
-			for (auto& cell : cells_) {
+			std::unordered_map<intptr_t, float> distances;
+
+			auto projected_size = [&](auto& cell) {
 				auto center = cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f};
 				auto half_extend = glm::vec3{cell->volume_data().grid_length() / 2.f};
 				auto radius = glm::vec3{glm::length(half_extend), 0.f, 0.f};
 				auto center_view = camera.view() * glm::vec4{center, 1.f};
 				auto radius_view = center_view + glm::vec4{radius, 0.f};
+
 				auto center_projected = camera.projection() * glm::vec4{center_view.x, center_view.y, center_view.z, 1.f};
 				center_projected /= center_projected.w;
 				auto radius_projected = camera.projection() * glm::vec4{radius_view.x, radius_view.y, radius_view.z, 1.f};
 				radius_projected /= radius_projected.w;
 				auto projected_size = glm::length(center_projected - radius_projected);
 
-				if (projected_size > magic_size_1) {
+				auto key = reinterpret_cast<intptr_t>(cell.get());
+				distances[key] = projected_size;
+
+				return projected_size;
+			};
+
+			auto cmp = [&](const auto& a, const auto& b) {
+				return projected_size(cells_.at(a)) > projected_size(cells_.at(b));
+			};
+
+			std::sort(sorted_cells_.begin(), sorted_cells_.end(), cmp);
+
+			std::unordered_map<size_t, bool> vistied_cells;
+
+			for (auto& index : sorted_cells_) {
+				vistied_cells[index] = true;
+				auto& cell = cells_[index];
+				auto key = reinterpret_cast<intptr_t>(cell.get());
+				auto size = distances[key];
+				auto current_lod_level = cell->lod_level();
+
+				if (size > magic_size_1) {
 					cell->lod_level(0);
-				} else if (projected_size > magic_size_2) {
+				} else if (size > magic_size_2) {
 					cell->lod_level(1);
 				} else {
 					cell->lod_level(2);
+				}
+
+				auto& adjacent_cells = cell->adjacent_cells();
+				for (auto& adjacent_cell_info : adjacent_cells) {
+					if (adjacent_cell_info.index != -1 &&
+							vistied_cells.find(adjacent_cell_info.index) != vistied_cells.end() &&
+							vistied_cells[adjacent_cell_info.index]) {
+						auto& adjacent_cell = cells_[adjacent_cell_info.index];
+						auto lod_level = cell->lod_level();
+						auto adj_lod_level = adjacent_cell->lod_level();
+
+						if (lod_level - adj_lod_level > 1) {
+							cell->lod_level(lod_level - 1);
+						} else if (lod_level - adj_lod_level < -1) {
+							cell->lod_level(lod_level + 1);
+						}
+					}
+				}
+
+				if (current_lod_level != cell->lod_level()) {
+					cell->build();
 				}
 			}
 
