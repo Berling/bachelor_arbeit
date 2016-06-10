@@ -90,12 +90,14 @@ namespace vbte {
 			}
 		}
 
-		void context::enqueue_read_buffer(buffer& buffer, bool blocking, size_t size, void* data) {
+		cl::Event context::enqueue_read_buffer(buffer& buffer, bool blocking, size_t size, void* data) {
+			cl::Event event;
 			try {
-				command_queue_.enqueueReadBuffer(buffer.get(), blocking, 0, size, data);
+				command_queue_.enqueueReadBuffer(buffer.get(), blocking, 0, size, data, nullptr, &event);
 			} catch (const cl::Error& error) {
 				utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
 			}
+			return event;
 		}
 
 		void context::enqueue_acquire_gl_buffer(shared_buffer& buffer) {

@@ -17,7 +17,7 @@ namespace vbte {
 		: engine_(engine), context_(nullptr), clear_color_(glm::vec4(0.47f, 0.62f, 0.64f, 1.f)),
 		shader_manager_(std::make_unique<graphics::shader_manager>(engine_)),
 		texture_manager_(std::make_unique<graphics::texture_manager>(engine_)) {
-			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 			SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);

@@ -81,7 +81,7 @@ namespace vbte {
 			static auto& rendering_system = engine_.rendering_system();
 
 			for (auto& cell : cells_) {
-				if (!cell->is_empty()) {
+				if (!cell->is_empty() && !cell->is_dirty()) {
 					rendering_system.draw(cell.get());
 				}
 				if (with_bounding_box) {
@@ -131,7 +131,7 @@ namespace vbte {
 				auto key = reinterpret_cast<intptr_t>(cell.get());
 				auto size = distances[key];
 				auto current_lod_level = cell->lod_level();
-
+/*
 				if (size > magic_size_1) {
 					cell->lod_level(0);
 				} else if (size > magic_size_2) {
@@ -156,7 +156,7 @@ namespace vbte {
 						}
 					}
 				}
-
+*/
 				if (current_lod_level != cell->lod_level()) {
 					cell->build();
 				}

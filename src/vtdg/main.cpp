@@ -36,10 +36,7 @@ int main(int argc, char* argv[]) {
 	};
 
 	auto plane = [&](const glm::vec3& p) {
-		if (p.x > 5.f) {
-			return 2.f - p.y;
-		}
-		return -p.y;
+		return 5.f - p.y;
 	};
 
 	std::random_device generator;

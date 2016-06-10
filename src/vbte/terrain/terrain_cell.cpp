@@ -74,10 +74,13 @@ namespace vbte {
 		}
 
 		void terrain_cell::draw() const {
-			if (front_) {
+			if (!is_empty() && front_) {
 				vao_.bind();
+				if (vertex_count_ <= 0) {
+					utils::log << "should not be zero " << glm::to_string(position()) << std::endl;
+				}
 				glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
-			} else {
+			} else if (!is_empty() && !front_) {
 				vao2_.bind();
 				glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
 			}
@@ -159,13 +162,14 @@ namespace vbte {
 
 				compute_context.enqueue_write_buffer(*adjacent_cells_buffer_, false, 6 * sizeof(adjacent_cell), adjacent_cells_.data());
 				kernel.arg(6, *adjacent_cells_buffer_);
-				auto event = compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
+				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
 				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 
+				cl::Event event;
 				if (initial_build_ || !front_) {
-					compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count_);
+					event = compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count_);
 				} else {
-					compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count2_);
+					event = compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count2_);
 				}
 
 				auto result = event.setCallback(

@@ -30,7 +30,7 @@ namespace vbte {
 			context& operator=(context&&) = delete;
 
 			void enqueue_write_buffer(buffer& buffer, bool blocking, size_t size, const void* data);
-			void enqueue_read_buffer(buffer& buffer, bool blocking, size_t size, void* data);
+			cl::Event enqueue_read_buffer(buffer& buffer, bool blocking, size_t size, void* data);
 			void enqueue_acquire_gl_buffer(shared_buffer& buffer);
 			void enqueue_release_gl_buffer(shared_buffer& buffer);
 			cl::Event enqueue_kernel(kernel& kernel, const cl::NDRange& global_range, const cl::NDRange& local_range);
