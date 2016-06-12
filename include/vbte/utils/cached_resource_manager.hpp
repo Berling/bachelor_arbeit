@@ -2,6 +2,7 @@
 #define __VBTE_UTILS_CACHED_RESOURCE_MANAGER_HPP__
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -13,6 +14,7 @@ namespace vbte {
 		private:
 			std::unordered_map<std::string, std::shared_ptr<resource>> cache_;
 			std::vector<std::string> clean_buffer_;
+			std::mutex cache_mutex_;
 
 		public:
 			cached_resource_manager() = default;
@@ -29,17 +31,20 @@ namespace vbte {
 				if (name.empty()) {
 					return nullptr;
 				}
-				auto it = cache_.find(name);
-				if (it != cache_.end()) {
-					auto ptr = it->second;
+				{
+					std::lock_guard<std::mutex> lock(cache_mutex_);
+					auto it = cache_.find(name);
+					if (it != cache_.end()) {
+						auto ptr = it->second;
+						if (ptr) {
+							return ptr;
+						}
+					}
+					auto ptr = static_cast<manager*>(this)->load_new(name, std::forward<arguments>(args)...);
 					if (ptr) {
+						cache_[name] = ptr;
 						return ptr;
 					}
-				}
-				auto ptr = static_cast<manager*>(this)->load_new(name, std::forward<arguments>(args)...);
-				if (ptr) {
-					cache_[name] = ptr;
-					return ptr;
 				}
 				return nullptr;
 			}
