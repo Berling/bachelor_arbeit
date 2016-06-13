@@ -16,7 +16,8 @@
 namespace vbte {
 	namespace terrain {
 		terrain::terrain(core::engine& engine, terrain_system& terrain_system, const std::string& path) : engine_{engine},
-		                                                                                                  terrain_system_{terrain_system} {
+		                                                                                                  terrain_system_{terrain_system},
+		                                                                                                  loaded_{false} {
 			auto& asset_manager = engine_.asset_manager();
 			auto terrain_info = asset_manager.load(path);
 			if (!terrain_info) {
@@ -73,103 +74,123 @@ namespace vbte {
 				}
 			}
 
-			auto& camera = engine_.camera();
-			update_lod_levels(camera.position(), false);
+			auto load_task = [&]() {
+				for (auto& cell : cells_) {
+					cell->load();
+				}
+				loaded_.store(true);
+			};
+			load_thread_ = std::thread(load_task);
+		}
+
+		terrain::~terrain() noexcept {
+			load_thread_.join();
 		}
 
 		void terrain::draw(bool with_bounding_box) {
 			static auto& rendering_system = engine_.rendering_system();
 
+			auto i = 0;
 			for (auto& cell : cells_) {
-				if (!cell->is_empty() && !cell->is_dirty()) {
+				if (!cell->is_empty()) {
 					rendering_system.draw(cell.get());
 				}
-				if (with_bounding_box) {
+				if (with_bounding_box && cell->is_loaded()) {
 					rendering_system.draw_bounding_box(glm::vec3{cell->volume_data().grid_length() / 2.f}, cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f}, glm::angleAxis(0.f, glm::vec3{0.f}));
 				}
 			}
 		}
 
 		void terrain::update_lod_levels(const glm::vec3& position, bool update_geometry) {
-			static auto& camera = engine_.camera();
+			for (auto& cell : cells_) {
+				cell->initialize();
+			}
 
-			const auto magic_size_1 = 1.f;
-			const auto magic_size_2 = 0.8f;
+			if (loaded_.load()) {
+				static auto& camera = engine_.camera();
 
-			std::unordered_map<intptr_t, float> distances;
+				const auto magic_size_1 = 1.f;
+				const auto magic_size_2 = 0.8f;
 
-			auto projected_size = [&](auto& cell) {
-				auto center = cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f};
-				auto half_extend = glm::vec3{cell->volume_data().grid_length() / 2.f};
-				auto radius = glm::vec3{glm::length(half_extend), 0.f, 0.f};
-				auto center_view = camera.view() * glm::vec4{center, 1.f};
-				auto radius_view = center_view + glm::vec4{radius, 0.f};
+				std::unordered_map<intptr_t, float> distances;
 
-				auto center_projected = camera.projection() * glm::vec4{center_view.x, center_view.y, center_view.z, 1.f};
-				center_projected /= center_projected.w;
-				auto radius_projected = camera.projection() * glm::vec4{radius_view.x, radius_view.y, radius_view.z, 1.f};
-				radius_projected /= radius_projected.w;
-				auto projected_size = glm::length(center_projected - radius_projected);
+				auto projected_size = [&](auto& cell) {
+					if (cell->is_loaded()) {
+						auto center = cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f};
+						auto half_extend = glm::vec3{cell->volume_data().grid_length() / 2.f};
+						auto radius = glm::vec3{glm::length(half_extend), 0.f, 0.f};
+						auto center_view = camera.view() * glm::vec4{center, 1.f};
+						auto radius_view = center_view + glm::vec4{radius, 0.f};
 
-				auto key = reinterpret_cast<intptr_t>(cell.get());
-				distances[key] = projected_size;
+						auto center_projected = camera.projection() * glm::vec4{center_view.x, center_view.y, center_view.z, 1.f};
+						center_projected /= center_projected.w;
+						auto radius_projected = camera.projection() * glm::vec4{radius_view.x, radius_view.y, radius_view.z, 1.f};
+						radius_projected /= radius_projected.w;
+						auto projected_size = glm::length(center_projected - radius_projected);
 
-				return projected_size;
-			};
+						auto key = reinterpret_cast<intptr_t>(cell.get());
+						distances[key] = projected_size;
 
-			auto cmp = [&](const auto& a, const auto& b) {
-				return projected_size(cells_.at(a)) > projected_size(cells_.at(b));
-			};
+						return projected_size;
+					} else {
+						return 0.f;
+					}
+				};
 
-			std::sort(sorted_cells_.begin(), sorted_cells_.end(), cmp);
+				auto cmp = [&](const auto& a, const auto& b) {
+					return projected_size(cells_.at(a)) > projected_size(cells_.at(b));
+				};
 
-			std::unordered_map<size_t, bool> vistied_cells;
+				std::sort(sorted_cells_.begin(), sorted_cells_.end(), cmp);
 
-			for (auto& index : sorted_cells_) {
-				vistied_cells[index] = true;
-				auto& cell = cells_[index];
-				auto key = reinterpret_cast<intptr_t>(cell.get());
-				auto size = distances[key];
-				auto current_lod_level = cell->lod_level();
-/*
-				if (size > magic_size_1) {
-					cell->lod_level(0);
-				} else if (size > magic_size_2) {
-					cell->lod_level(1);
-				} else {
-					cell->lod_level(2);
-				}
+				std::unordered_map<size_t, bool> vistied_cells;
 
-				auto& adjacent_cells = cell->adjacent_cells();
-				for (auto& adjacent_cell_info : adjacent_cells) {
-					if (adjacent_cell_info.index != -1 &&
-							vistied_cells.find(adjacent_cell_info.index) != vistied_cells.end() &&
-							vistied_cells[adjacent_cell_info.index]) {
-						auto& adjacent_cell = cells_[adjacent_cell_info.index];
-						auto lod_level = cell->lod_level();
-						auto adj_lod_level = adjacent_cell->lod_level();
+				for (auto& index : sorted_cells_) {
+					vistied_cells[index] = true;
+					auto& cell = cells_[index];
+					auto key = reinterpret_cast<intptr_t>(cell.get());
+					auto size = distances[key];
+					auto current_lod_level = cell->lod_level();
 
-						if (lod_level - adj_lod_level > 1) {
-							cell->lod_level(lod_level - 1);
-						} else if (lod_level - adj_lod_level < -1) {
-							cell->lod_level(lod_level + 1);
+					if (size > magic_size_1) {
+						cell->lod_level(0);
+					} else if (size > magic_size_2) {
+						cell->lod_level(1);
+					} else {
+						cell->lod_level(2);
+					}
+
+					auto& adjacent_cells = cell->adjacent_cells();
+					for (auto& adjacent_cell_info : adjacent_cells) {
+						if (adjacent_cell_info.index != -1 &&
+								vistied_cells.find(adjacent_cell_info.index) != vistied_cells.end() &&
+								vistied_cells[adjacent_cell_info.index]) {
+							auto& adjacent_cell = cells_[adjacent_cell_info.index];
+							auto lod_level = cell->lod_level();
+							auto adj_lod_level = adjacent_cell->lod_level();
+
+							if (lod_level - adj_lod_level > 1) {
+								cell->lod_level(lod_level - 1);
+							} else if (lod_level - adj_lod_level < -1) {
+								cell->lod_level(lod_level + 1);
+							}
 						}
 					}
-				}
-*/
-				if (current_lod_level != cell->lod_level()) {
-					cell->build();
-				}
-			}
 
-			for (auto& cell : cells_) {
-				cell->update_adjacent_cells_info();
-			}
+					if (current_lod_level != cell->lod_level()) {
+						cell->build();
+					}
+				}
 
-			for (auto& cell : cells_) {
-				auto resolution = cell->volume_data().resolution();
-				if (update_geometry) {
-					cell->update_geometry(resolution >> cell->lod_level());
+				for (auto& cell : cells_) {
+					cell->update_adjacent_cells_info();
+				}
+
+				for (auto& cell : cells_) {
+					auto resolution = cell->volume_data().resolution();
+					if (update_geometry) {
+						cell->update_geometry(resolution >> cell->lod_level());
+					}
 				}
 			}
 		}

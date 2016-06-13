@@ -40,67 +40,47 @@ namespace vbte {
 		                                                           vbo2_{GL_DYNAMIC_DRAW},
 		                                                           vertex_count_{0},
 		                                                           empty_{false},
-		                                                           dirty_{false} {
-			volume_data_ = terrain_system_.volume_data_manager().load(file_name);
-			if (!volume_data_) {
-				throw std::runtime_error{"could not load file " + file_name};
-			}
-
-			maximum_vertex_count_ = estimate_vertex_count(*volume_data_, volume_data_->resolution());
-			if (maximum_vertex_count_ == 0) {
-				empty_ = true;
-			}
-
-			if (!empty_) {
-				auto cells_per_dimension = owner_.cells_per_dimension();
-				adjacent_cells_[0].index = index.x == 0 ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x - 1)));
-				adjacent_cells_[1].index = index.x == (cells_per_dimension - 1) ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x + 1)));
-				adjacent_cells_[2].index = index.y == 0 ? -1 : (index.z + cells_per_dimension * ((index.y - 1) + 2 * index.x));
-				adjacent_cells_[3].index = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
-				adjacent_cells_[4].index = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
-				adjacent_cells_[5].index = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
-
-				auto& compute_context = terrain_system_.compute_context();
-				volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
-				vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, maximum_vertex_count_ * sizeof(rendering::basic_vertex));
-				vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
-				adjacent_cells_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, 6 * sizeof(adjacent_cell));
-
-				vertices_.resize(maximum_vertex_count_);
-
-				engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
-				engine_.rendering_system().basic_layout().setup_layout(vao2_, &vbo2_);
-			}
+		                                                           dirty_{false},
+		                                                           loaded_{false},
+		                                                           file_name_{file_name} {
+			auto cells_per_dimension = owner_.cells_per_dimension();
+			adjacent_cells_[0].index = index.x == 0 ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x - 1)));
+			adjacent_cells_[1].index = index.x == (cells_per_dimension - 1) ? -1 : (index.z + cells_per_dimension * (index.y + 2 * (index.x + 1)));
+			adjacent_cells_[2].index = index.y == 0 ? -1 : (index.z + cells_per_dimension * ((index.y - 1) + 2 * index.x));
+			adjacent_cells_[3].index = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
+			adjacent_cells_[4].index = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
+			adjacent_cells_[5].index = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
 		}
 
 		void terrain_cell::draw() const {
-			if (!is_empty() && front_) {
-				vao_.bind();
-				if (vertex_count_ <= 0) {
-					utils::log << "should not be zero " << glm::to_string(position()) << std::endl;
+			if (is_loaded()) {
+				if (!is_empty() && front_ && !initial_build_) {
+					vao_.bind();
+					glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
+				} else if (!is_empty() && !front_) {
+					vao2_.bind();
+					glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
 				}
-				glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
-			} else if (!is_empty() && !front_) {
-				vao2_.bind();
-				glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
 			}
 		}
 
 		void terrain_cell::draw_normals() const {
-			static auto& normal_program = terrain_system_.normal_program();
-			static auto& camera = engine_.camera();
-			normal_program.use();
-			normal_program.uniform("model", false, transform());
-			normal_program.uniform("view", false, camera.view());
-			normal_program.uniform("projection", false, camera.projection());
-			normal_program.uniform("normal_length", 0.3f);
-			normal_program.uniform("color", glm::vec4{0.f, 0.f, 1.f, 1.f});
-			if (front_) {
-				vao_.bind();
-				glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
-			} else {
-				vao2_.bind();
-				glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
+			if (is_loaded()) {
+				static auto& normal_program = terrain_system_.normal_program();
+				static auto& camera = engine_.camera();
+				normal_program.use();
+				normal_program.uniform("model", false, transform());
+				normal_program.uniform("view", false, camera.view());
+				normal_program.uniform("projection", false, camera.projection());
+				normal_program.uniform("normal_length", 0.3f);
+				normal_program.uniform("color", glm::vec4{0.f, 0.f, 1.f, 1.f});
+				if (front_) {
+					vao_.bind();
+					glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
+				} else {
+					vao2_.bind();
+					glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
+				}
 			}
 		}
 
@@ -205,6 +185,36 @@ namespace vbte {
 						}
 					}
 				}
+			}
+		}
+
+		void terrain_cell::load() {
+			volume_data_ = terrain_system_.volume_data_manager().load(file_name_);
+			if (!volume_data_) {
+				throw std::runtime_error{"could not load file " + file_name_};
+			}
+
+			maximum_vertex_count_ = estimate_vertex_count(*volume_data_, volume_data_->resolution());
+			vertices_.resize(maximum_vertex_count_);
+			if (maximum_vertex_count_ == 0) {
+				empty_ = true;
+			}
+			loaded_.store(true);
+		}
+
+		void terrain_cell::initialize() {
+			if (is_loaded() && !initialized_) {
+				if (!empty_) {
+					auto& compute_context = terrain_system_.compute_context();
+					volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
+					vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, maximum_vertex_count_ * sizeof(rendering::basic_vertex));
+					vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
+					adjacent_cells_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, 6 * sizeof(adjacent_cell));
+
+					engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
+					engine_.rendering_system().basic_layout().setup_layout(vao2_, &vbo2_);
+				}
+				initialized_ = true;
 			}
 		}
 	}

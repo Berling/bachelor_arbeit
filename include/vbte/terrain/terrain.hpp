@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace vbte {
@@ -32,10 +33,12 @@ namespace vbte {
 			std::vector<std::unique_ptr<terrain_cell>> cells_;
 			std::vector<size_t> sorted_cells_;
 			size_t cells_per_dimension_;
+			std::thread load_thread_;
+			std::atomic_bool loaded_;
 
 		public:
 			terrain(core::engine& engine, terrain_system& terrain_system, const std::string& path);
-			~terrain() = default;
+			~terrain() noexcept;
 
 			terrain(const terrain&) = delete;
 			terrain& operator=(const terrain&) = delete;

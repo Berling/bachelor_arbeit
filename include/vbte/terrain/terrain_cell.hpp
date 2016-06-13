@@ -61,6 +61,9 @@ namespace vbte {
 			size_t maximum_vertex_count_ = 0;
 			std::array<adjacent_cell, 6> adjacent_cells_;
 			std::unique_ptr<compute::buffer> adjacent_cells_buffer_;
+			std::atomic_bool loaded_;
+			std::string file_name_;
+			bool initialized_ = false;
 
 		public:
 			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::ivec3& index, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
@@ -85,6 +88,14 @@ namespace vbte {
 				return dirty_.load();
 			}
 
+			auto is_loaded() const noexcept {
+				return loaded_.load();
+			}
+
+			auto is_initialized() const noexcept {
+				return initialized_;
+			}
+
 			void lod_level(int level) noexcept {
 				assert(level <= 2);
 				current_lod_level_ = level;
@@ -105,6 +116,8 @@ namespace vbte {
 			}
 
 			void update_adjacent_cells_info() noexcept;
+			void load();
+			void initialize();
 
 		private:
 			void marching_cubes(const class volume_data& grid, size_t resolution);

@@ -70,7 +70,7 @@ workspace "bachelor_arbeit"
 				"$(AMDAPPSDKROOT)/lib/x86_64/sdk"
 			}
 
-			links {"GL", "GLEW", "SDL2", "OpenCL"}
+			links {"GL", "GLEW", "SDL2", "OpenCL", "pthread"}
 
 		configuration {"gmake", "windows"}
 			links {"mingw32", "imagehlp", "SDL2main", "SDL2", "glew32s", "opengl32", "opencl"}
