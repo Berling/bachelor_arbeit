@@ -30,6 +30,16 @@ namespace vbte {
 			uint32_t resolution = 0;
 			uint32_t higher_resolution = false;
 		};
+
+		struct lod_cache_element {
+			graphics::vertex_array vao;
+			graphics::vertex_buffer vbo = graphics::vertex_buffer{GL_STATIC_DRAW};
+			int vertex_count = 0;
+			bool builded = false;
+			std::atomic_bool write;
+
+			lod_cache_element() : write{false} {}
+		};
 	}
 }
 
@@ -64,6 +74,8 @@ namespace vbte {
 			std::atomic_bool loaded_;
 			std::string file_name_;
 			bool initialized_ = false;
+			std::vector<std::unique_ptr<lod_cache_element>> lod_cache_;
+			bool build_lod_cache_ = true;
 
 		public:
 			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::ivec3& index, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
@@ -120,7 +132,9 @@ namespace vbte {
 			void initialize();
 
 		private:
-			void marching_cubes(const class volume_data& grid, size_t resolution);
+			cl::Event marching_cubes(const class volume_data& grid, size_t resolution, int& vertex_count);
+			void calculate_cell_borders(const class volume_data& grid, size_t resolution);
+			void initialize_lod_cache();
 		};
 	}
 }

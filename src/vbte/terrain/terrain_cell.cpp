@@ -50,22 +50,32 @@ namespace vbte {
 			adjacent_cells_[3].index = index.y == 1 ? -1 : (index.z + cells_per_dimension * ((index.y + 1) + 2 * index.x));
 			adjacent_cells_[4].index = index.z == 0 ? -1 : ((index.z - 1) + cells_per_dimension * (index.y + 2 * index.x));
 			adjacent_cells_[5].index = index.z == (cells_per_dimension - 1) ? -1 : ((index.z + 1) + cells_per_dimension * (index.y + 2 * index.x));
+
+			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
+			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
+			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
 		}
 
 		void terrain_cell::draw() const {
-			if (is_loaded()) {
+			if (is_initialized()) {
+				auto& chache_element = *lod_cache_[current_lod_level_];
+				if (chache_element.builded) {
+					chache_element.vao.bind();
+					glDrawArrays(GL_TRIANGLES, 0, chache_element.vertex_count);
+				}
+
 				if (!is_empty() && front_ && !initial_build_) {
-					vao_.bind();
-					glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
+					//vao_.bind();
+					//glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
 				} else if (!is_empty() && !front_) {
-					vao2_.bind();
-					glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
+					//vao2_.bind();
+					//glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
 				}
 			}
 		}
 
 		void terrain_cell::draw_normals() const {
-			if (is_loaded()) {
+			if (is_initialized()) {
 				static auto& normal_program = terrain_system_.normal_program();
 				static auto& camera = engine_.camera();
 				normal_program.use();
@@ -86,7 +96,7 @@ namespace vbte {
 
 		void terrain_cell::update_geometry(size_t resolution) {
 			if (build_) {
-				this->marching_cubes(*volume_data_, resolution);
+				this->calculate_cell_borders(*volume_data_, resolution);
 				build_ = false;
 			}
 			if (!dirty_.load() && write_data_) {
@@ -102,7 +112,38 @@ namespace vbte {
 			}
 		}
 
-		void terrain_cell::marching_cubes(const class volume_data& grid, size_t resolution) {
+		cl::Event terrain_cell::marching_cubes(const class volume_data& grid, size_t resolution, int& vertex_count) {
+				auto& compute_context = terrain_system_.compute_context();
+				vertex_count = 0;
+
+				compute_context.enqueue_write_buffer(*volume_buffer_, false, grid.grid().size() * sizeof(float), grid.grid().data());
+				compute_context.enqueue_write_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
+
+				auto& kernel = terrain_system_.marching_cubes_kernel();
+
+				kernel.arg(0, *volume_buffer_);
+				kernel.arg(1, static_cast<uint32_t>(grid.resolution()));
+				kernel.arg(2, static_cast<uint32_t>(resolution));
+				kernel.arg(3, grid.grid_length());
+				kernel.arg(4, *vertex_buffer_);
+				kernel.arg(5, *vertex_count_buffer_);
+				kernel.arg(6, nullptr);
+				kernel.arg(7, nullptr);
+				kernel.arg(8, nullptr);
+				kernel.arg(9, nullptr);
+				kernel.arg(10, nullptr);
+				kernel.arg(11, nullptr);
+				kernel.arg(12, nullptr);
+
+
+				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, resolution - 2, resolution - 2}, cl::NDRange{2, 2, 2}, cl::NDRange{1, 1, 1});
+				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
+				auto event = compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
+
+				return event;
+		}
+
+		void terrain_cell::calculate_cell_borders(const class volume_data& grid, size_t resolution) {
 			if (!is_empty() && !dirty_.load()) {
 				dirty_.store(true);
 
@@ -215,7 +256,35 @@ namespace vbte {
 					engine_.rendering_system().basic_layout().setup_layout(vao2_, &vbo2_);
 				}
 				initialized_ = true;
+			} else if (is_loaded() && is_initialized()) {
+				initialize_lod_cache();
 			}
+		}
+
+		void terrain_cell::initialize_lod_cache() {
+				for (int i = 0; i < lod_cache_.size(); ++i) {
+					auto& chache_element = *lod_cache_[i];
+
+					if (build_lod_cache_) {
+						engine_.rendering_system().basic_layout().setup_layout(chache_element.vao, &chache_element.vbo);
+
+						auto event = marching_cubes(*volume_data_, volume_data_->resolution() >> i, chache_element.vertex_count);
+
+						event.setCallback(
+							CL_COMPLETE,
+							+[](cl_event event, cl_int command_exec_status, void* user_data) {
+								reinterpret_cast<lod_cache_element*>(user_data)->write.store(true);
+							},
+							&chache_element
+						);
+					} else if (chache_element.write.load()) {
+						chache_element.write.store(false);
+						chache_element.builded = true;
+
+						chache_element.vbo.data(chache_element.vertex_count * sizeof(rendering::basic_vertex), vertices_.data());
+					}
+				}
+				build_lod_cache_ = false;
 		}
 	}
 }
