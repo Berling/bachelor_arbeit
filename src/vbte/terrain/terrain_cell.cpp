@@ -59,17 +59,17 @@ namespace vbte {
 		void terrain_cell::draw() const {
 			if (is_initialized()) {
 				auto& chache_element = *lod_cache_[current_lod_level_];
-				if (chache_element.builded) {
+				if (chache_element.builded && !is_empty()) {
 					chache_element.vao.bind();
 					glDrawArrays(GL_TRIANGLES, 0, chache_element.vertex_count);
 				}
 
 				if (!is_empty() && front_ && !initial_build_) {
-					//vao_.bind();
-					//glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
+					vao_.bind();
+					glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
 				} else if (!is_empty() && !front_) {
-					//vao2_.bind();
-					//glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
+					vao2_.bind();
+					glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
 				}
 			}
 		}
@@ -84,6 +84,13 @@ namespace vbte {
 				normal_program.uniform("projection", false, camera.projection());
 				normal_program.uniform("normal_length", 0.3f);
 				normal_program.uniform("color", glm::vec4{0.f, 0.f, 1.f, 1.f});
+
+				auto& chache_element = *lod_cache_[current_lod_level_];
+				if (chache_element.builded && !is_empty()) {
+					chache_element.vao.bind();
+					glDrawArrays(GL_TRIANGLES, 0, chache_element.vertex_count);
+				}
+
 				if (front_) {
 					vao_.bind();
 					glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
@@ -137,7 +144,7 @@ namespace vbte {
 
 
 				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, resolution - 2, resolution - 2}, cl::NDRange{2, 2, 2}, cl::NDRange{1, 1, 1});
-				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
+				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), lod_cache_vertices_.data());
 				auto event = compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
 
 				return event;
@@ -183,7 +190,12 @@ namespace vbte {
 
 				compute_context.enqueue_write_buffer(*adjacent_cells_buffer_, false, 6 * sizeof(adjacent_cell), adjacent_cells_.data());
 				kernel.arg(6, *adjacent_cells_buffer_);
-				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution, resolution, resolution}, cl::NDRange{4, 4, 4});
+				compute_context.enqueue_kernel(kernel, cl::NDRange{1, resolution, resolution}, cl::NDRange{1, 4, 4});
+				compute_context.enqueue_kernel(kernel, cl::NDRange{1, resolution, resolution}, cl::NDRange{1, 4, 4}, cl::NDRange{resolution - 1, 0, 0});
+				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, 1, resolution}, cl::NDRange{2, 1, 2}, cl::NDRange{1, 0, 0});
+				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, 1, resolution}, cl::NDRange{2, 1, 2}, cl::NDRange{1, resolution - 1, 0});
+				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, resolution - 2, 1}, cl::NDRange{2, 2, 1}, cl::NDRange{1, 1, 0});
+				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, resolution - 2, 1}, cl::NDRange{2, 2, 1}, cl::NDRange{1, 1, resolution - 1});
 				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 
 				cl::Event event;
@@ -237,6 +249,7 @@ namespace vbte {
 
 			maximum_vertex_count_ = estimate_vertex_count(*volume_data_, volume_data_->resolution());
 			vertices_.resize(maximum_vertex_count_);
+			lod_cache_vertices_.resize(maximum_vertex_count_);
 			if (maximum_vertex_count_ == 0) {
 				empty_ = true;
 			}
@@ -281,7 +294,7 @@ namespace vbte {
 						chache_element.write.store(false);
 						chache_element.builded = true;
 
-						chache_element.vbo.data(chache_element.vertex_count * sizeof(rendering::basic_vertex), vertices_.data());
+						chache_element.vbo.data(chache_element.vertex_count * sizeof(rendering::basic_vertex), lod_cache_vertices_.data());
 					}
 				}
 				build_lod_cache_ = false;

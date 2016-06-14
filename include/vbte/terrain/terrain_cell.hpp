@@ -76,6 +76,7 @@ namespace vbte {
 			bool initialized_ = false;
 			std::vector<std::unique_ptr<lod_cache_element>> lod_cache_;
 			bool build_lod_cache_ = true;
+			std::vector<rendering::basic_vertex> lod_cache_vertices_;
 
 		public:
 			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::ivec3& index, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
