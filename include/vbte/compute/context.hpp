@@ -33,7 +33,7 @@ namespace vbte {
 			cl::Event enqueue_read_buffer(buffer& buffer, bool blocking, size_t size, void* data);
 			void enqueue_acquire_gl_buffer(shared_buffer& buffer);
 			void enqueue_release_gl_buffer(shared_buffer& buffer);
-			cl::Event enqueue_kernel(kernel& kernel, const cl::NDRange& global_range, const cl::NDRange& local_range);
+			cl::Event enqueue_kernel(kernel& kernel, const cl::NDRange& global_range, const cl::NDRange& local_range, const cl::NDRange& offset = cl::NullRange);
 
 			auto& get() noexcept {
 				return default_context_;

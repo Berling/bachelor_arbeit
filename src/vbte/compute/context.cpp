@@ -118,9 +118,9 @@ namespace vbte {
 			}
 		}
 
-		cl::Event context::enqueue_kernel(kernel& kernel, const cl::NDRange& global_range, const cl::NDRange& local_range) {
+		cl::Event context::enqueue_kernel(kernel& kernel, const cl::NDRange& global_range, const cl::NDRange& local_range, const cl::NDRange& offset) {
 			cl::Event event;
-			command_queue_.enqueueNDRangeKernel(kernel.get(), cl::NullRange, global_range, local_range, nullptr, &event);
+			command_queue_.enqueueNDRangeKernel(kernel.get(), offset, global_range, local_range, nullptr, &event);
 			return event;
 		}
 	}
