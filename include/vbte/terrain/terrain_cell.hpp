@@ -65,6 +65,7 @@ namespace vbte {
 			bool empty_;
 			std::atomic_bool dirty_;
 			std::vector<rendering::basic_vertex> vertices_;
+			std::vector<rendering::basic_vertex> vertices2_;
 			int current_lod_level_ = 0;
 			bool build_ = true;
 			bool write_data_ = false;
@@ -76,7 +77,7 @@ namespace vbte {
 			bool initialized_ = false;
 			std::vector<std::unique_ptr<lod_cache_element>> lod_cache_;
 			bool build_lod_cache_ = true;
-			std::vector<rendering::basic_vertex> lod_cache_vertices_;
+			std::vector<std::vector<rendering::basic_vertex>> lod_cache_vertices_;
 
 		public:
 			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::ivec3& index, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
@@ -133,7 +134,7 @@ namespace vbte {
 			void initialize();
 
 		private:
-			cl::Event marching_cubes(const class volume_data& grid, size_t resolution, int& vertex_count);
+			cl::Event marching_cubes(const class volume_data& grid, size_t resolution, std::vector<rendering::basic_vertex>& vertices, int& vertex_count);
 			void calculate_cell_borders(const class volume_data& grid, size_t resolution);
 			void initialize_lod_cache();
 		};

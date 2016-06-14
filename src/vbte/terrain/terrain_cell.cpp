@@ -54,6 +54,10 @@ namespace vbte {
 			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
 			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
 			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
+
+			lod_cache_vertices_.emplace_back();
+			lod_cache_vertices_.emplace_back();
+			lod_cache_vertices_.emplace_back();
 		}
 
 		void terrain_cell::draw() const {
@@ -112,14 +116,14 @@ namespace vbte {
 					front_ = true;
 					initial_build_ = false;
 				} else {
-					vbo2_.data(vertex_count2_ * sizeof(rendering::basic_vertex), vertices_.data());
+					vbo2_.data(vertex_count2_ * sizeof(rendering::basic_vertex), vertices2_.data());
 					front_ = false;
 				}
 				write_data_ = false;
 			}
 		}
 
-		cl::Event terrain_cell::marching_cubes(const class volume_data& grid, size_t resolution, int& vertex_count) {
+		cl::Event terrain_cell::marching_cubes(const class volume_data& grid, size_t resolution, std::vector<rendering::basic_vertex>& vertices, int& vertex_count) {
 				auto& compute_context = terrain_system_.compute_context();
 				vertex_count = 0;
 
@@ -144,7 +148,7 @@ namespace vbte {
 
 
 				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, resolution - 2, resolution - 2}, cl::NDRange{2, 2, 2}, cl::NDRange{1, 1, 1});
-				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), lod_cache_vertices_.data());
+				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices.data());
 				auto event = compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count);
 
 				return event;
@@ -196,12 +200,13 @@ namespace vbte {
 				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, 1, resolution}, cl::NDRange{2, 1, 2}, cl::NDRange{1, resolution - 1, 0});
 				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, resolution - 2, 1}, cl::NDRange{2, 2, 1}, cl::NDRange{1, 1, 0});
 				compute_context.enqueue_kernel(kernel, cl::NDRange{resolution - 2, resolution - 2, 1}, cl::NDRange{2, 2, 1}, cl::NDRange{1, 1, resolution - 1});
-				compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 
 				cl::Event event;
 				if (initial_build_ || !front_) {
+					compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 					event = compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count_);
 				} else {
+					compute_context.enqueue_read_buffer(*vertex_buffer_, false, maximum_vertex_count_ * sizeof(rendering::basic_vertex), vertices2_.data());
 					event = compute_context.enqueue_read_buffer(*vertex_count_buffer_, false, sizeof(int), &vertex_count2_);
 				}
 
@@ -249,7 +254,11 @@ namespace vbte {
 
 			maximum_vertex_count_ = estimate_vertex_count(*volume_data_, volume_data_->resolution());
 			vertices_.resize(maximum_vertex_count_);
-			lod_cache_vertices_.resize(maximum_vertex_count_);
+			vertices2_.resize(maximum_vertex_count_);
+			for (auto& vertices : lod_cache_vertices_) {
+				vertices.resize(maximum_vertex_count_);
+			}
+
 			if (maximum_vertex_count_ == 0) {
 				empty_ = true;
 			}
@@ -281,7 +290,7 @@ namespace vbte {
 					if (build_lod_cache_) {
 						engine_.rendering_system().basic_layout().setup_layout(chache_element.vao, &chache_element.vbo);
 
-						auto event = marching_cubes(*volume_data_, volume_data_->resolution() >> i, chache_element.vertex_count);
+						auto event = marching_cubes(*volume_data_, volume_data_->resolution() >> i, lod_cache_vertices_[i], chache_element.vertex_count);
 
 						event.setCallback(
 							CL_COMPLETE,
@@ -294,7 +303,8 @@ namespace vbte {
 						chache_element.write.store(false);
 						chache_element.builded = true;
 
-						chache_element.vbo.data(chache_element.vertex_count * sizeof(rendering::basic_vertex), lod_cache_vertices_.data());
+						chache_element.vbo.data(chache_element.vertex_count * sizeof(rendering::basic_vertex), lod_cache_vertices_[i].data());
+						lod_cache_vertices_[i].clear();
 					}
 				}
 				build_lod_cache_ = false;
