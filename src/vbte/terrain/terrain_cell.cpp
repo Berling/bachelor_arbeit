@@ -54,6 +54,7 @@ namespace vbte {
 			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
 			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
 			lod_cache_.emplace_back(std::make_unique<lod_cache_element>());
+			front_lod_cache_element_ = lod_cache_[0].get();
 
 			lod_cache_vertices_.emplace_back();
 			lod_cache_vertices_.emplace_back();
@@ -62,16 +63,20 @@ namespace vbte {
 
 		void terrain_cell::draw() const {
 			if (is_initialized()) {
-				auto& chache_element = *lod_cache_[current_lod_level_];
-				if (chache_element.builded && !is_empty()) {
-					chache_element.vao.bind();
-					glDrawArrays(GL_TRIANGLES, 0, chache_element.vertex_count);
-				}
-
 				if (!is_empty() && front_ && !initial_build_) {
+					if (front_lod_cache_element_->builded) {
+						front_lod_cache_element_->vao.bind();
+						glDrawArrays(GL_TRIANGLES, 0, front_lod_cache_element_->vertex_count);
+					}
+
 					vao_.bind();
 					glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
 				} else if (!is_empty() && !front_) {
+					if (back_lod_cache_element_->builded) {
+						back_lod_cache_element_->vao.bind();
+						glDrawArrays(GL_TRIANGLES, 0, back_lod_cache_element_->vertex_count);
+					}
+
 					vao2_.bind();
 					glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
 				}
@@ -115,9 +120,11 @@ namespace vbte {
 					vbo_.data(vertex_count_ * sizeof(rendering::basic_vertex), vertices_.data());
 					front_ = true;
 					initial_build_ = false;
+					front_lod_cache_element_ = lod_cache_[current_lod_level_].get();
 				} else {
 					vbo2_.data(vertex_count2_ * sizeof(rendering::basic_vertex), vertices2_.data());
 					front_ = false;
+					back_lod_cache_element_ = lod_cache_[current_lod_level_].get();
 				}
 				write_data_ = false;
 			}

@@ -67,6 +67,7 @@ namespace vbte {
 			std::vector<rendering::basic_vertex> vertices_;
 			std::vector<rendering::basic_vertex> vertices2_;
 			int current_lod_level_ = 0;
+			int old_lod_level_ = 0;
 			bool build_ = true;
 			bool write_data_ = false;
 			size_t maximum_vertex_count_ = 0;
@@ -78,6 +79,10 @@ namespace vbte {
 			std::vector<std::unique_ptr<lod_cache_element>> lod_cache_;
 			bool build_lod_cache_ = true;
 			std::vector<std::vector<rendering::basic_vertex>> lod_cache_vertices_;
+			bool switch_lod_cache_ = false;
+			lod_cache_element* front_lod_cache_element_ = nullptr;
+			lod_cache_element* back_lod_cache_element_ = nullptr;
+
 
 		public:
 			terrain_cell(core::engine& engine, terrain_system& terrain_system, terrain& owner, const glm::ivec3& index, const glm::vec3& position, const glm::quat& rotation, const std::string& file_name);
