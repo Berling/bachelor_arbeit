@@ -117,7 +117,6 @@ namespace vbte {
 		void terrain_cell::update_geometry(size_t resolution) {
 			if (build_) {
 				this->calculate_cell_borders(*volume_data_, resolution);
-				build_ = false;
 			}
 			if (!dirty_.load() && write_data_) {
 				if (initial_build_ || !front_) {
@@ -229,6 +228,7 @@ namespace vbte {
 					this
 				);
 				write_data_ = true;
+				build_ = false;
 			}
 		}
 
