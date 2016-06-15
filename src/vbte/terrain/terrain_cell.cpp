@@ -94,16 +94,20 @@ namespace vbte {
 				normal_program.uniform("normal_length", 0.3f);
 				normal_program.uniform("color", glm::vec4{0.f, 0.f, 1.f, 1.f});
 
-				auto& chache_element = *lod_cache_[current_lod_level_];
-				if (chache_element.builded && !is_empty()) {
-					chache_element.vao.bind();
-					glDrawArrays(GL_TRIANGLES, 0, chache_element.vertex_count);
-				}
-
 				if (front_) {
+					if (front_lod_cache_element_->builded) {
+						front_lod_cache_element_->vao.bind();
+						glDrawArrays(GL_TRIANGLES, 0, front_lod_cache_element_->vertex_count);
+					}
+
 					vao_.bind();
 					glDrawArrays(GL_TRIANGLES, 0, vertex_count_);
 				} else {
+					if (back_lod_cache_element_->builded) {
+						back_lod_cache_element_->vao.bind();
+						glDrawArrays(GL_TRIANGLES, 0, back_lod_cache_element_->vertex_count);
+					}
+
 					vao2_.bind();
 					glDrawArrays(GL_TRIANGLES, 0, vertex_count2_);
 				}
