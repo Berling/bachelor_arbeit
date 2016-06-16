@@ -37,7 +37,7 @@ namespace vbte {
 
 			void update(float delta_time);
 
-			auto& projection() const noexcept {
+			auto projection() const noexcept {
 				return projection_;
 			}
 

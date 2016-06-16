@@ -85,14 +85,6 @@ namespace vbte {
 			};
 			load_thread_ = std::thread(load_task);
 
-			auto throw_if_null = [](auto ptr) {
-				if (!ptr) {
-					throw std::runtime_error{"could not load texture"};
-				} else {
-					return ptr;
-				}
-			};
-
 			auto& texture_manager = engine_.graphics_system().texture_manager();
 
 			auto texture = texture_manager.load("textures/terrain/rock_diffuse.dds");
@@ -132,7 +124,7 @@ namespace vbte {
 			}
 
 			if (loaded_.load()) {
-				static auto& camera = engine_.camera();
+				auto& camera = engine_.camera();
 
 				const auto magic_size_1 = 1.f;
 				const auto magic_size_2 = 0.8f;

@@ -203,7 +203,7 @@ namespace vbte {
 				auto& cells = owner_.cells();
 				auto argument_index = 7;
 				for (auto& adjacent_cell : adjacent_cells_) {
-					if (adjacent_cell.index != - 1 && !cells[adjacent_cell.index]->is_empty()) {
+					if (adjacent_cell.index != -1 && !cells[adjacent_cell.index]->is_empty()) {
 						auto& cell = *cells[adjacent_cell.index];
 						auto& data = cell.volume_data();
 						compute_context.enqueue_write_buffer(cell.volume_buffer(), false, data.grid().size() * sizeof(float), data.grid().data());
@@ -264,6 +264,8 @@ namespace vbte {
 							}
 							adjacent_cell.higher_resolution = false;
 						}
+					} else {
+						adjacent_cell.index = -1;
 					}
 				}
 			}
@@ -276,10 +278,10 @@ namespace vbte {
 			}
 
 			maximum_vertex_count_ = estimate_vertex_count(*volume_data_, volume_data_->resolution());
-			vertices_.resize(maximum_vertex_count_);
-			vertices2_.resize(maximum_vertex_count_);
+			vertices_.assign(maximum_vertex_count_, rendering::basic_vertex{});
+			vertices2_.assign(maximum_vertex_count_, rendering::basic_vertex{});
 			for (auto& vertices : lod_cache_vertices_) {
-				vertices.resize(maximum_vertex_count_);
+				vertices.assign(maximum_vertex_count_, rendering::basic_vertex{});
 			}
 
 			if (maximum_vertex_count_ == 0) {

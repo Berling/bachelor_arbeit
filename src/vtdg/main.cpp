@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 		grid.serialize(argv[4]);
 	} else if (sampling_function == "terrain") {
 		auto cell_length = grid_length / grid_resolution;
-		auto cell_resolution = size_t{128};
+		auto cell_resolution = size_t{64};
 
 		terrain_header head;
 		head.cell_count = grid_resolution;

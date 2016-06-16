@@ -20,7 +20,14 @@ namespace vbte {
 			try {
 				auto sources = cl::Program::Sources{1, std::make_pair(source.c_str(), source.length() + 1)};
 				program = cl::Program{context, source};
-				error = program.build({device});
+
+				#ifdef DEBUG
+					const std::string build_options = "-g -cl-opt-disable";
+				#else
+					const std::string build_options;
+				#endif
+
+				error = program.build({device}, build_options.c_str());
 				kernel_ = cl::Kernel{program, name.c_str()};
 			} catch (const cl::Error& ex) {
 				if (ex.err() == -11) {

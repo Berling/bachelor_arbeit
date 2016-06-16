@@ -1,5 +1,7 @@
-#include <SDL2/SDL.h>
+#include <atomic>
 #include <iostream>
+
+#include <SDL2/SDL.h>
 
 #include <vbte/asset/asset.hpp>
 #include <vbte/asset/asset_loader.hpp>

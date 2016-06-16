@@ -1,6 +1,8 @@
 #ifndef __VBTE_CORE_ENGINE_HPP__
 #define __VBTE_CORE_ENGINE_HPP__
 
+#include <cassert>
+
 #include <vbte/asset/asset_manager.hpp>
 #include <vbte/utils/config_manager.hpp>
 #include <vbte/utils/config.hpp>
