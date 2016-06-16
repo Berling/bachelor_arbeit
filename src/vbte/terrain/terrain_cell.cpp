@@ -14,6 +14,8 @@
 #include <vbte/asset/asset_manager.hpp>
 #include <vbte/core/camera.hpp>
 #include <vbte/core/engine.hpp>
+#include <vbte/graphics/program.hpp>
+#include <vbte/graphics/texture.hpp>
 #include <vbte/graphics/transform_feedback_buffer.hpp>
 #include <vbte/graphics/vertex_layout.hpp>
 #include <vbte/rendering/rendering_system.hpp>
@@ -131,6 +133,16 @@ namespace vbte {
 				}
 				write_data_ = false;
 			}
+		}
+
+		void terrain_cell::prepare_textures() {
+			auto& textures = owner_.textures();
+			auto& shader = engine_.rendering_system().light_program();
+			textures[0]->bind(0);
+			textures[1]->bind(1);
+			shader.uniform("rock_diffuse", 0);
+			shader.uniform("grass_diffuse", 1);
+			shader.uniform("tex_scale", 0.6f);
 		}
 
 		cl::Event terrain_cell::marching_cubes(const class volume_data& grid, size_t resolution, std::vector<rendering::basic_vertex>& vertices, int& vertex_count) {

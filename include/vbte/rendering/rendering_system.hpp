@@ -81,6 +81,10 @@ namespace vbte {
 				draw_normals_ = !draw_normals_;
 			}
 
+			auto& light_program() noexcept {
+				return light_program_;
+			}
+
 			void draw(drawable* geometry);
 			void draw_bounding_box(const glm::vec3& half_extend, const glm::vec3& position, const glm::quat& rotation);
 		};

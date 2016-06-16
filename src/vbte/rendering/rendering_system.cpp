@@ -127,7 +127,7 @@ namespace vbte {
 					light_program_.uniform("color", debug_face_color_);
 					light_program_.uniform("light_direction", glm::vec3{-1.f, 1.f, -1.f});
 					light_program_.uniform("light_color", glm::vec3{1.f});
-					light_program_.uniform("light_energy", 1.0f);
+					light_program_.uniform("light_energy", 0.5f);
 					light_program_.uniform("color", debug_face_color_);
 					geometry->draw();
 
@@ -136,6 +136,7 @@ namespace vbte {
 			} else if (mode_ == rendering_mode::solid) {
 				glEnable(GL_CULL_FACE);
 				glCullFace(GL_BACK);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
@@ -144,7 +145,6 @@ namespace vbte {
 
 				for (auto& geometry : draw_queue_) {
 					debug_program_.uniform("model", false, geometry->transform());
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 					geometry->draw();
 				}
 
@@ -152,6 +152,7 @@ namespace vbte {
 			} else if (mode_ == rendering_mode::shaded) {
 				glEnable(GL_CULL_FACE);
 				glCullFace(GL_BACK);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 				light_program_.use();
 				light_program_.uniform("projection", false, camera.projection());
@@ -160,12 +161,12 @@ namespace vbte {
 				light_program_.uniform("color", debug_face_color_);
 				light_program_.uniform("light_direction", glm::vec3{-1.f, 1.f, -1.f});
 				light_program_.uniform("light_color", glm::vec3{1.f});
-				light_program_.uniform("light_energy", 1.0f);
+				light_program_.uniform("light_energy", 0.5f);
 
 				for (auto& geometry : draw_queue_) {
 					light_program_.uniform("model", false, geometry->transform());
 					light_program_.uniform("mit", false, glm::inverseTranspose(geometry->transform()));
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+					geometry->prepare_textures();
 					geometry->draw();
 				}
 

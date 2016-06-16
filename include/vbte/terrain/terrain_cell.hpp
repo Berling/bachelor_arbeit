@@ -90,6 +90,7 @@ namespace vbte {
 
 			void draw() const override;
 			void update_geometry(size_t resolution);
+			void prepare_textures() override;
 
 			auto& volume_data() const noexcept {
 				return *volume_data_;

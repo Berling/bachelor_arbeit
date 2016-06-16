@@ -10,6 +10,10 @@ namespace vbte {
 		class engine;
 	}
 
+	namespace graphics {
+		class texture;
+	}
+
 	namespace terrain {
 		class terrain_cell;
 		class terrain_system;
@@ -35,6 +39,7 @@ namespace vbte {
 			size_t cells_per_dimension_;
 			std::thread load_thread_;
 			std::atomic_bool loaded_;
+			std::vector<std::shared_ptr<const graphics::texture>> textures_;
 
 		public:
 			terrain(core::engine& engine, terrain_system& terrain_system, const std::string& path);
@@ -56,6 +61,10 @@ namespace vbte {
 
 			auto cells_per_dimension() const noexcept {
 				return cells_per_dimension_;
+			}
+
+			auto& textures() const noexcept {
+				return textures_;
 			}
 		};
 	}

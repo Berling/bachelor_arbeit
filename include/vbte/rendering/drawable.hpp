@@ -55,6 +55,8 @@ namespace vbte {
 				transformation[3].z = position_.z;
 				return transformation;
 			}
+
+			virtual void prepare_textures() {}
 		};
 	}
 }

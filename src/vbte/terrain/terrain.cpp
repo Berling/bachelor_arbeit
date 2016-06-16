@@ -7,6 +7,9 @@
 #include <vbte/asset/asset_manager.hpp>
 #include <vbte/core/camera.hpp>
 #include <vbte/core/engine.hpp>
+#include <vbte/graphics/graphics_system.hpp>
+#include <vbte/graphics/texture.hpp>
+#include <vbte/graphics/texture_manager.hpp>
 #include <vbte/rendering/rendering_system.hpp>
 #include <vbte/terrain/terrain.hpp>
 #include <vbte/terrain/terrain_cell.hpp>
@@ -81,6 +84,28 @@ namespace vbte {
 				loaded_.store(true);
 			};
 			load_thread_ = std::thread(load_task);
+
+			auto throw_if_null = [](auto ptr) {
+				if (!ptr) {
+					throw std::runtime_error{"could not load texture"};
+				} else {
+					return ptr;
+				}
+			};
+
+			auto& texture_manager = engine_.graphics_system().texture_manager();
+
+			auto texture = texture_manager.load("textures/terrain/rock_diffuse.dds");
+			if (!texture) {
+				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/rock_diffuse.dds" << std::endl;
+			}
+			textures_.emplace_back(texture);
+
+			texture = texture_manager.load("textures/terrain/grass_diffuse.dds");
+			if (!texture) {
+				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/grass_diffuse.dds" << std::endl;
+			}
+			textures_.emplace_back(texture);
 		}
 
 		terrain::~terrain() noexcept {
