@@ -22,7 +22,7 @@ namespace vbte {
 				program = cl::Program{context, source};
 
 				#ifdef DEBUG
-					const std::string build_options = "-g -cl-opt-disable";
+					const std::string build_options = "-g";
 				#else
 					const std::string build_options;
 				#endif
