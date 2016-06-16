@@ -291,11 +291,11 @@ namespace vbte {
 		void terrain_cell::initialize() {
 			if (is_loaded() && !initialized_) {
 				if (!empty_) {
-					auto& compute_context = terrain_system_.compute_context();
-					volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
-					vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, maximum_vertex_count_ * sizeof(rendering::basic_vertex));
-					vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
-					adjacent_cells_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, 6 * sizeof(adjacent_cell));
+						auto& compute_context = terrain_system_.compute_context();
+						volume_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, volume_data_->grid().size() * sizeof(float));
+						vertex_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_WRITE_ONLY, maximum_vertex_count_ * sizeof(rendering::basic_vertex));
+						vertex_count_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_WRITE, sizeof(int));
+						adjacent_cells_buffer_ = std::make_unique<compute::buffer>(compute_context, CL_MEM_READ_ONLY, 6 * sizeof(adjacent_cell));
 
 					engine_.rendering_system().basic_layout().setup_layout(vao_, &vbo_);
 					engine_.rendering_system().basic_layout().setup_layout(vao2_, &vbo2_);
@@ -311,6 +311,10 @@ namespace vbte {
 					auto& chache_element = *lod_cache_[i];
 
 					if (build_lod_cache_) {
+						if (empty_) {
+							return;
+						}
+
 						engine_.rendering_system().basic_layout().setup_layout(chache_element.vao, &chache_element.vbo);
 
 						auto event = marching_cubes(*volume_data_, volume_data_->resolution() >> i, lod_cache_vertices_[i], chache_element.vertex_count);
