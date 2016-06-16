@@ -7,9 +7,9 @@ out vec4 frag_color;
 
 uniform vec3 view_vector;
 uniform vec3 color;
-uniform vec3 light_direction;
-uniform vec3 light_color;
-uniform float light_energy;
+uniform vec3 light_direction[2];
+uniform vec3 light_color[2];
+uniform float light_energy[2];
 
 uniform sampler2D rock_diffuse;
 uniform sampler2D grass_diffuse;
@@ -27,7 +27,6 @@ vec3 blinn_phong(vec3 N, vec3 L, vec3 V, vec3 light_color, vec3 diff_color, floa
 void main() {
 	vec3 N = normalize(normal_);
 	vec3 V = normalize(view_vector - position_);
-	vec3 L = normalize(light_direction);
 
 	vec3 flip = vec3(N.x < 0.0, N.y >= 0.0, N.z < 0.0);
 	vec3 blend_weights = clamp(abs(N) - 0.5, 0.f, 1.f);
@@ -48,5 +47,9 @@ void main() {
 
 	blended_color = color1 * blend_weights.xxx + color2 * blend_weights.yyy + color3 * blend_weights.zzz;
 
-	frag_color = vec4(blinn_phong(N, L, V, light_color, blended_color, 5.f), 1.f) * light_energy;
+	frag_color = vec4(0.f);
+	for (int i = 0; i < 2; ++i) {
+		vec3 L = normalize(light_direction[i]);
+		frag_color += vec4(blinn_phong(N, L, V, light_color[i], blended_color, 1.f), 1.f) * light_energy[i];
+	}
 }

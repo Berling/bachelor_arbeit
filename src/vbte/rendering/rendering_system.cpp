@@ -76,6 +76,21 @@ namespace vbte {
 
 			auto& camera = engine_.camera();
 
+			std::vector<glm::vec3> light_direction = {
+				glm::vec3{-1.f, 1.f, -1.f},
+				glm::vec3{1.f, 1.f, 1.f}
+			};
+
+			std::vector<glm::vec3> light_color  = {
+				glm::vec3{1.f},
+				glm::vec3{1.f}
+			};
+
+			std::vector<float> light_energy = {
+				0.6f,
+				0.005f
+			};
+
 			if (mode_ == rendering_mode::wireframe) {
 				debug_program_.use();
 				debug_program_.uniform("projection", false, camera.projection());
@@ -125,9 +140,9 @@ namespace vbte {
 					light_program_.uniform("mit", false, glm::inverseTranspose(geometry->transform()));
 					light_program_.uniform("view_vector", camera.position());
 					light_program_.uniform("color", debug_face_color_);
-					light_program_.uniform("light_direction", glm::vec3{-1.f, 1.f, -1.f});
-					light_program_.uniform("light_color", glm::vec3{1.f});
-					light_program_.uniform("light_energy", 0.5f);
+					light_program_.uniform("light_direction", 2, light_direction);
+					light_program_.uniform("light_color", 2, light_color);
+					light_program_.uniform("light_energy", 2, light_energy);
 					light_program_.uniform("color", debug_face_color_);
 					geometry->draw();
 
@@ -159,9 +174,9 @@ namespace vbte {
 				light_program_.uniform("view", false, camera.view());
 				light_program_.uniform("view_vector", camera.position());
 				light_program_.uniform("color", debug_face_color_);
-				light_program_.uniform("light_direction", glm::vec3{-1.f, 1.f, -1.f});
-				light_program_.uniform("light_color", glm::vec3{1.f});
-				light_program_.uniform("light_energy", 0.5f);
+				light_program_.uniform("light_direction", 2, light_direction);
+				light_program_.uniform("light_color", 2, light_color);
+				light_program_.uniform("light_energy", 2, light_energy);
 
 				for (auto& geometry : draw_queue_) {
 					light_program_.uniform("model", false, geometry->transform());
