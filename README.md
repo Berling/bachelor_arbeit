@@ -11,12 +11,13 @@ Realtime terrain rendering engine based on volume data.
 * gli
 * glm
 * SDL2
+* OpenCL
 
 
 ## Supported compilers
 
 * Clang
-* GCC (MinGW)
+* GCC
 
 ## License
 
