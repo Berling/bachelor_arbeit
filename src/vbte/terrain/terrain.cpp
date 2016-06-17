@@ -87,15 +87,39 @@ namespace vbte {
 
 			auto& texture_manager = engine_.graphics_system().texture_manager();
 
-			auto texture = texture_manager.load("textures/terrain/rock_diffuse.dds");
+			auto texture = texture_manager.load("textures/terrain/rock_albedo.dds");
 			if (!texture) {
-				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/rock_diffuse.dds" << std::endl;
+				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/rock_albedo.dds" << std::endl;
 			}
 			textures_.emplace_back(texture);
 
-			texture = texture_manager.load("textures/terrain/grass_diffuse.dds");
+			texture = texture_manager.load("textures/terrain/rock_material.dds");
 			if (!texture) {
-				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/grass_diffuse.dds" << std::endl;
+				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/rock_material.dds" << std::endl;
+			}
+			textures_.emplace_back(texture);
+
+			texture = texture_manager.load("textures/terrain/rock_normal.dds");
+			if (!texture) {
+				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/rock_normal.dds" << std::endl;
+			}
+			textures_.emplace_back(texture);
+
+			texture = texture_manager.load("textures/terrain/grass_albedo.dds");
+			if (!texture) {
+				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/grass_albedo.dds" << std::endl;
+			}
+			textures_.emplace_back(texture);
+
+			texture = texture_manager.load("textures/terrain/grass_material.dds");
+			if (!texture) {
+				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/grass_material.dds" << std::endl;
+			}
+			textures_.emplace_back(texture);
+
+			texture = texture_manager.load("textures/terrain/grass_normal.dds");
+			if (!texture) {
+				utils::log(utils::log_level::fatal) << "could not load texture textures/terrain/grass_normal.dds" << std::endl;
 			}
 			textures_.emplace_back(texture);
 		}

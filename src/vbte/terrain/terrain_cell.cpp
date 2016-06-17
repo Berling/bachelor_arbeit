@@ -140,8 +140,16 @@ namespace vbte {
 			auto& shader = engine_.rendering_system().light_program();
 			textures[0]->bind(0);
 			textures[1]->bind(1);
-			shader.uniform("rock_diffuse", 0);
-			shader.uniform("grass_diffuse", 1);
+			textures[2]->bind(2);
+			textures[3]->bind(3);
+			textures[4]->bind(4);
+			textures[5]->bind(5);
+			shader.uniform("rock_albedo", 0);
+			shader.uniform("rock_material", 1);
+			shader.uniform("rock_normal", 2);
+			shader.uniform("grass_albedo", 3);
+			shader.uniform("grass_material", 4);
+			shader.uniform("grass_normal", 5);
 			shader.uniform("tex_scale", 0.6f);
 		}
 

@@ -87,8 +87,8 @@ namespace vbte {
 			};
 
 			std::vector<float> light_energy = {
-				0.6f,
-				0.005f
+				1.0f,
+				0.1f
 			};
 
 			if (mode_ == rendering_mode::wireframe) {
