@@ -1,6 +1,6 @@
-# Volume based realtime terrain rendering engine
+# Real-Time Rendering von volumetrischem Terrain
 
-Realtime terrain rendering engine based on volume data.
+Real Time Rendering of Volumetric Terrain
 
 ## Powered by
 
