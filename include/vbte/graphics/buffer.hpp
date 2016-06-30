@@ -1,6 +1,8 @@
 #ifndef __VBTE_GRAPHICS_BUFFER_HPP__
 #define __VBTE_GRAPHICS_BUFFER_HPP__
 
+#include <stdexcept>
+
 #include <GL/glew.h>
 
 namespace vbte {
@@ -8,13 +10,17 @@ namespace vbte {
 		template <GLenum target>
 		class buffer {
 		protected:
-			GLuint id_;
+			GLuint id_ = 0;
 			GLenum usage_;
 
 		public:
 			buffer(GLenum usage) noexcept
 			: usage_(usage) {
 				glGenBuffers(1, &id_);
+				if (id_ == 0) {
+					throw std::runtime_error{"no buffer created"};
+				}
+				bind();
 			}
 
 			buffer(size_t size, const void* data, GLenum usage) noexcept
