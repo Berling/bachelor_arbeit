@@ -150,36 +150,40 @@ namespace vbte {
 			if (loaded_.load()) {
 				auto& camera = engine_.camera();
 
-				const auto magic_size_1 = 1.f;
-				const auto magic_size_2 = 0.8f;
+				const auto magic_size_1 = 20.f;
+				const auto magic_size_2 = 60.f;
 
 				std::unordered_map<intptr_t, float> distances;
 
-				auto projected_size = [&](auto& cell) {
-					if (cell->is_loaded()) {
-						auto center = cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f};
-						auto half_extend = glm::vec3{cell->volume_data().grid_length() / 2.f};
-						auto radius = glm::vec3{glm::length(half_extend), 0.f, 0.f};
-						auto center_view = camera.view() * glm::vec4{center, 1.f};
-						auto radius_view = center_view + glm::vec4{radius, 0.f};
+				auto distance = [&](auto& cell) {
+					auto center = cell->position() + glm::vec3{cell->volume_data().grid_length() / 2.f};
+					auto half_extend = glm::vec3{cell->volume_data().grid_length() / 2.f};
+					std::vector<glm::vec3> points;
+					points.emplace_back(center);
+					points.emplace_back(center + half_extend);
+					points.emplace_back(center + glm::vec3{-half_extend.x , half_extend.y, half_extend.z});
+					points.emplace_back(center + glm::vec3{-half_extend.x , half_extend.y, -half_extend.z});
+					points.emplace_back(center + glm::vec3{half_extend.x , half_extend.y, -half_extend.z});
+					points.emplace_back(center + glm::vec3{half_extend.x , -half_extend.y, half_extend.z});
+					points.emplace_back(center + glm::vec3{-half_extend.x , -half_extend.y, half_extend.z});
+					points.emplace_back(center + glm::vec3{-half_extend.x , -half_extend.y, -half_extend.z});
+					points.emplace_back(center + glm::vec3{half_extend.x , -half_extend.y, -half_extend.z});
 
-						auto center_projected = camera.projection() * glm::vec4{center_view.x, center_view.y, center_view.z, 1.f};
-						center_projected /= center_projected.w;
-						auto radius_projected = camera.projection() * glm::vec4{radius_view.x, radius_view.y, radius_view.z, 1.f};
-						radius_projected /= radius_projected.w;
-						auto projected_size = glm::length(center_projected - radius_projected);
+					auto cmp = [&](const auto& a, const auto& b) {
+						return glm::length(a - position) < glm::length(b - position);
+					};
 
-						auto key = reinterpret_cast<intptr_t>(cell.get());
-						distances[key] = projected_size;
+					std::sort(points.begin(), points.end(), cmp);
 
-						return projected_size;
-					} else {
-						return 0.f;
-					}
+					auto distance = glm::length(points.front() - position);
+					auto key = reinterpret_cast<intptr_t>(cell.get());
+					distances[key] = distance;
+
+					return distance;
 				};
 
 				auto cmp = [&](const auto& a, const auto& b) {
-					return projected_size(cells_.at(a)) > projected_size(cells_.at(b));
+					return distance(cells_.at(a)) < distance(cells_.at(b));
 				};
 
 				std::sort(sorted_cells_.begin(), sorted_cells_.end(), cmp);
@@ -193,9 +197,9 @@ namespace vbte {
 					auto size = distances[key];
 					auto current_lod_level = cell->lod_level();
 
-					if (size > magic_size_1) {
+					if (size < magic_size_1) {
 						cell->lod_level(0);
-					} else if (size > magic_size_2) {
+					} else if (size < magic_size_2) {
 						cell->lod_level(1);
 					} else {
 						cell->lod_level(2);
