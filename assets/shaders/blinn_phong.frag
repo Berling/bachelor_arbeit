@@ -3,8 +3,10 @@
 in vec3 normal_;
 in vec3 position_;
 in vec3 ltan1_;
+in vec3 ltan12_;
 in vec3 vtan1_;
 in vec2 ltan2_;
+in vec2 ltan22_;
 in vec2 vtan2_;
 
 out vec4 frag_color;
@@ -53,9 +55,13 @@ void main() {
 
 	vec3 l1 = normalize(ltan1_);
 	vec3 l2 = normalize(vec3(ltan2_.x, ltan2_.y, ltan1_.z));
+	vec3 l3 = normalize(ltan12_);
+	vec3 l4 = normalize(vec3(ltan22_.x, ltan22_.y, ltan12_.z));
 
 	vec3 h1 = normalize(l1 + normalize(vtan1_));
 	vec3 h2 = normalize(l2 + normalize(vec3(vtan2_.x, vtan2_.y, vtan1_.z)));
+	vec3 h3 = normalize(l3 + normalize(vtan1_));
+	vec3 h4 = normalize(l4 + normalize(vec3(vtan2_.x, vtan2_.y, vtan1_.z)));
 
 	vec3 nx = 2.f * texture(rock_normal, coord1).xyz - 1.f;
 	vec3 ny = 2.f * texture(grass_normal, coord2).xyz - 1.f;
@@ -72,5 +78,17 @@ void main() {
 	temp.z = clamp(dot(nz, h2), 0.f, 1.f);
 	float NdotH = dot(temp, blend_weights);
 
-	frag_color = vec4(blinn_phong(NdotL, NdotH, light_color[0], blended_color, blended_material.r, blended_material.g), 1.f) * light_energy[0];
+	temp.x = clamp(dot(nx, l3), 0.f, 1.f);
+	temp.y = clamp(dot(ny, l3), 0.f, 1.f);
+	temp.z = clamp(dot(nz, l4), 0.f, 1.f);
+	float NdotL2 = dot(temp, blend_weights);
+
+	temp.x = clamp(dot(nx, h3), 0.f, 1.f);
+	temp.y = clamp(dot(ny, h3), 0.f, 1.f);
+	temp.z = clamp(dot(nz, h4), 0.f, 1.f);
+	float NdotH2 = dot(temp, blend_weights);
+
+	frag_color = vec4(0.f, 0.f, 0.f, 0.f);
+	frag_color += vec4(blinn_phong(NdotL, NdotH, light_color[0], blended_color, blended_material.r, blended_material.g), 1.f) * light_energy[0];
+	frag_color += vec4(blinn_phong(NdotL2, NdotH2, light_color[1], blended_color, blended_material.r, blended_material.g), 1.f) * light_energy[1];
 }

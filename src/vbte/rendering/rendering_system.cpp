@@ -78,7 +78,7 @@ namespace vbte {
 
 			std::vector<glm::vec3> light_direction = {
 				glm::vec3{1.f, 1.f, -1.f},
-				glm::vec3{1.f, 1.f, 1.f}
+				glm::vec3{-1.f, -1.f, 1.f}
 			};
 
 			std::vector<glm::vec3> light_color  = {
@@ -88,7 +88,7 @@ namespace vbte {
 
 			std::vector<float> light_energy = {
 				1.0f,
-				0.5f
+				0.1f
 			};
 
 			if (mode_ == rendering_mode::wireframe) {

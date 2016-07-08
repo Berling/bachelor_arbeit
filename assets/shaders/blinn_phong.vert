@@ -6,8 +6,10 @@ in vec3 _normal;
 out vec3 normal_;
 out vec3 position_;
 out vec3 ltan1_;
+out vec3 ltan12_;
 out vec3 vtan1_;
 out vec2 ltan2_;
+out vec2 ltan22_;
 out vec2 vtan2_;
 
 uniform mat4 projection;
@@ -40,6 +42,22 @@ void main() {
 		ltan2_ = temp.yw * inversesqrt(mag.y);
 
 		ltan1_.z = dot(normal, L);
+	}
+	L = normalize(light_direction[1]);
+	{
+		vec3 mag = normal * normal;
+		mag.xy = mag.x + mag.yz;
+		mag.xy = max(mag.xy, 0.03125f);
+
+		vec3 vxn = cross(L, normal);
+		vec4 temp;
+		temp.xy = normal.xz * L.yx - normal.yx * L.xz;
+		temp.zw = normal.xz * vxn.yx - normal.yx * vxn.xz;
+
+		ltan12_.xy = temp.xz * inversesqrt(mag.x);
+		ltan22_ = temp.yw * inversesqrt(mag.y);
+
+		ltan12_.z = dot(normal, L);
 	}
 	{
 		vec3 mag = normal * normal;
