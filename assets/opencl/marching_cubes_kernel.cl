@@ -1,5 +1,8 @@
 #pragma OPENCL EXTENSION cl_amd_printf : enable
 
+/*
+ * Marching-Cubes lookup by Cory Bloyd (corysama@yahoo.com)
+ */
 constant int edge_table[256] = {
 	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 	0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
@@ -294,6 +297,37 @@ constant int triangle_table[256][16] = {
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
+//================================================================================
+//
+// The Transvoxel Algorithm look-up tables
+//
+// Copyright 2009 by Eric Lengyel
+//
+// The following data originates from Eric Lengyel's Transvoxel Algorithm.
+// http://transvoxel.org/
+//
+// The data in this file may be freely used in implementations of the Transvoxel
+// Algorithm. If you do use this data, or any transformation of it, in your own
+// projects, commercial or otherwise, please give credit by indicating in your
+// source code that the data is part of the author's implementation of the
+// Transvoxel Algorithm and that it came from the web address given above.
+// (Simply copying and pasting the two lines of the previous paragraph would be
+// perfect.) If you distribute a commercial product with source code included,
+// then the credit in the source code is required.
+//
+// If you distribute any kind of product that uses this data, a credit visible to
+// the end-user would be appreciated, but it is not required. However, you may
+// not claim that the entire implementation of the Transvoxel Algorithm is your
+// own if you use the data in this file or any transformation of it.
+//
+// The format of the data in this file is described in the dissertation "Voxel-
+// Based Terrain for Real-Time Virtual Simulations", available at the web page
+// given above. References to sections and figures below pertain to that paper.
+//
+// The contents of this file are protected by copyright and may not be publicly
+// reproduced without permission.
+//
+//================================================================================
 constant int transition_cell_class[512] = {
 	0x00, 0x01, 0x02, 0x84, 0x01, 0x05, 0x04, 0x04, 0x02, 0x87, 0x09, 0x8C, 0x84, 0x0B, 0x05, 0x05,
 	0x01, 0x08, 0x07, 0x8D, 0x05, 0x0F, 0x8B, 0x0B, 0x04, 0x0D, 0x0C, 0x1C, 0x04, 0x8B, 0x85, 0x85,
