@@ -2,13 +2,13 @@
 #define __CL_ENABLE_EXCEPTIONS
 #endif
 
-#include <GL/glew.h>
 #include <CL/cl_gl.h>
+#include <GL/glew.h>
 
 #ifdef LINUX
-	#include <GL/glx.h>
+#include <GL/glx.h>
 #elif WINDOWS
-	#include <GL/wglext.h>
+#include <GL/wglext.h>
 #endif
 
 #include <vbte/compute/buffer.hpp>
@@ -26,22 +26,16 @@ namespace vbte {
 					cl::Platform::get(&platforms);
 					auto& default_platform = platforms.at(0);
 					std::string platform_vendor;
-					default_platform.getInfo(static_cast<cl_platform_info>(CL_PLATFORM_VENDOR), &platform_vendor);
-#ifdef LINUX
-					cl_context_properties properties[] = {
-						CL_GL_CONTEXT_KHR, (cl_context_properties)glXGetCurrentContext(),
-						CL_GLX_DISPLAY_KHR, (cl_context_properties)glXGetCurrentDisplay(),
-						CL_CONTEXT_PLATFORM, (cl_context_properties)(default_platform)(),
-						0
-					};
-#elif WINDOWS
-					cl_context_properties properties[] = {
-						CL_GL_CONTEXT_KHR, (cl_context_properties)wglGetCurrentContext(),
-						CL_WGL_HDC_KHR, (cl_context_properties)wglGetCurrentDC(),
-						CL_CONTEXT_PLATFORM, (cl_context_properties)(default_platform)(),
-						0
-					};
-#endif
+					default_platform.getInfo(static_cast<cl_platform_info>(CL_PLATFORM_VENDOR),
+					                         &platform_vendor);
+					std::cout << "platform: " << platform_vendor << std::endl;
+					cl_context_properties properties[] = {CL_GL_CONTEXT_KHR,
+					                                      (cl_context_properties)glXGetCurrentContext(),
+					                                      CL_GLX_DISPLAY_KHR,
+					                                      (cl_context_properties)glXGetCurrentDisplay(),
+					                                      CL_CONTEXT_PLATFORM,
+					                                      (cl_context_properties)(default_platform)(),
+					                                      0};
 					default_context_ = cl::Context{CL_DEVICE_TYPE_GPU, properties};
 
 					const auto& devices = default_context_.getInfo<CL_CONTEXT_DEVICES>();
@@ -52,21 +46,37 @@ namespace vbte {
 
 					command_queue_ = cl::CommandQueue{default_context_, default_device_};
 				} catch (const cl::Error& error) {
-					utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
+					utils::log(utils::log_level::fatal)
+					    << error.what() << "(" << error.err() << ")" << std::endl;
 				}
 			} else {
 				try {
 					std::vector<cl::Platform> platforms;
 					cl::Platform::get(&platforms);
-					auto& default_platform = platforms.at(0);
-					std::string platform_vendor;
-					default_platform.getInfo(static_cast<cl_platform_info>(CL_PLATFORM_VENDOR), &platform_vendor);
 
-					cl_context_properties properties[3] = {
-						CL_CONTEXT_PLATFORM,
-						(cl_context_properties)(default_platform)(),
-						0
-					};
+					cl::Platform* default_platform = nullptr;
+					for (auto& platform : platforms) {
+						std::vector<cl::Device> devices;
+						if (platform.getDevices(CL_DEVICE_TYPE_CPU, &devices) != CL_SUCCESS) {
+							continue;
+						}
+						if (!devices.empty()) {
+							default_platform = &platform;
+							break;
+						}
+					}
+
+					if (!default_platform) {
+						utils::log(utils::log_level::fatal)
+						    << "could not find a platform that supports a cpu device" << std::endl;
+					}
+
+					std::string platform_vendor;
+					default_platform->getInfo(static_cast<cl_platform_info>(CL_PLATFORM_VENDOR),
+					                          &platform_vendor);
+					utils::log(utils::log_level::info) << "platform: " << platform_vendor << std::endl;
+					cl_context_properties properties[3] = {CL_CONTEXT_PLATFORM,
+					                                       (cl_context_properties)(*default_platform)(), 0};
 					default_context_ = cl::Context{CL_DEVICE_TYPE_CPU, properties};
 
 					const auto& devices = default_context_.getInfo<CL_CONTEXT_DEVICES>();
@@ -77,16 +87,19 @@ namespace vbte {
 
 					command_queue_ = cl::CommandQueue{default_context_, default_device_};
 				} catch (const cl::Error& error) {
-					utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
+					utils::log(utils::log_level::fatal)
+					    << error.what() << "(" << error.err() << ")" << std::endl;
 				}
 			}
 		}
 
-		void context::enqueue_write_buffer(buffer& buffer, bool blocking, size_t size, const void* data) {
+		void context::enqueue_write_buffer(buffer& buffer, bool blocking, size_t size,
+		                                   const void* data) {
 			try {
 				command_queue_.enqueueWriteBuffer(buffer.get(), blocking, 0, size, data);
 			} catch (const cl::Error& error) {
-				utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
+				utils::log(utils::log_level::fatal)
+				    << error.what() << "(" << error.err() << ")" << std::endl;
 			}
 		}
 
@@ -95,7 +108,8 @@ namespace vbte {
 			try {
 				command_queue_.enqueueReadBuffer(buffer.get(), blocking, 0, size, data, nullptr, &event);
 			} catch (const cl::Error& error) {
-				utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
+				utils::log(utils::log_level::fatal)
+				    << error.what() << "(" << error.err() << ")" << std::endl;
 			}
 			return event;
 		}
@@ -105,7 +119,8 @@ namespace vbte {
 				const std::vector<cl::Memory> gl_objects = {buffer.get()};
 				command_queue_.enqueueAcquireGLObjects(&gl_objects, nullptr, nullptr);
 			} catch (const cl::Error& error) {
-				utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
+				utils::log(utils::log_level::fatal)
+				    << error.what() << "(" << error.err() << ")" << std::endl;
 			}
 		}
 
@@ -114,13 +129,16 @@ namespace vbte {
 				const std::vector<cl::Memory> gl_objects = {buffer.get()};
 				command_queue_.enqueueReleaseGLObjects(&gl_objects, nullptr, nullptr);
 			} catch (const cl::Error& error) {
-				utils::log(utils::log_level::fatal) << error.what() << "(" << error.err() << ")" << std::endl;
+				utils::log(utils::log_level::fatal)
+				    << error.what() << "(" << error.err() << ")" << std::endl;
 			}
 		}
 
-		cl::Event context::enqueue_kernel(kernel& kernel, const cl::NDRange& global_range, const cl::NDRange& local_range, const cl::NDRange& offset) {
+		cl::Event context::enqueue_kernel(kernel& kernel, const cl::NDRange& global_range,
+		                                  const cl::NDRange& local_range, const cl::NDRange& offset) {
 			cl::Event event;
-			command_queue_.enqueueNDRangeKernel(kernel.get(), offset, global_range, local_range, nullptr, &event);
+			command_queue_.enqueueNDRangeKernel(kernel.get(), offset, global_range, local_range, nullptr,
+			                                    &event);
 			return event;
 		}
 	}

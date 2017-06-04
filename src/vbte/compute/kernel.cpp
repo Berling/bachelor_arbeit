@@ -21,19 +21,18 @@ namespace vbte {
 				auto sources = cl::Program::Sources{1, std::make_pair(source.c_str(), source.length() + 1)};
 				program = cl::Program{context, source};
 
-				#ifdef DEBUG
-					const std::string build_options = "-g";
-				#else
-					const std::string build_options;
-				#endif
+				const std::string build_options;
 
 				error = program.build({device}, build_options.c_str());
 				kernel_ = cl::Kernel{program, name.c_str()};
 			} catch (const cl::Error& ex) {
 				if (ex.err() == -11) {
-					utils::log(utils::log_level::error) << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device) << std::endl;
-					utils::log(utils::log_level::error) << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(device) << std::endl;
-					utils::log(utils::log_level::error) << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
+					utils::log(utils::log_level::error)
+					    << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device) << std::endl;
+					utils::log(utils::log_level::error)
+					    << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(device) << std::endl;
+					utils::log(utils::log_level::error)
+					    << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
 				}
 				utils::log(utils::log_level::fatal) << ex.what() << "(" << ex.err() << ")" << std::endl;
 			}
